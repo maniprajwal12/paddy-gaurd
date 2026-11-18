@@ -229,6 +229,7 @@ DISEASE_KB = {
 # -----------------------------------------------------------------------------
 @app.get("/", response_class=HTMLResponse)
 @app.get("/index.html", response_class=HTMLResponse)
+@app.get("/api/index.py", response_class=HTMLResponse)
 def serve_ui():
     """Serves the farmer web application directly from FastAPI to eliminate 404s."""
     candidates = [
