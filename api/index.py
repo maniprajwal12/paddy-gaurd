@@ -5,9 +5,9 @@ FastAPI serverless handler for crop disease diagnosis, CIBRC chemical advisory, 
 
 from fastapi import FastAPI, File, UploadFile, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Optional, List, Dict
+from fastapi.responses import HTMLResponse
 import io
+import os
 import time
 from PIL import Image
 
@@ -224,7 +224,34 @@ DISEASE_KB = {
     }
 }
 
+# -----------------------------------------------------------------------------
+# ROOT ROUTE: SERVES HIGH-CONTRAST FARMER UI
+# -----------------------------------------------------------------------------
+@app.get("/", response_class=HTMLResponse)
+@app.get("/index.html", response_class=HTMLResponse)
+def serve_ui():
+    """Serves the farmer web application directly from FastAPI to eliminate 404s."""
+    candidates = [
+        os.path.join(os.path.dirname(__file__), "index.html"),
+        os.path.join(os.path.dirname(__file__), "..", "index.html"),
+        "index.html",
+        "public/index.html"
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    return HTMLResponse(content=f.read())
+            except Exception:
+                pass
+
+    return HTMLResponse(content="<h2>PaddyGuard AI UI Loading... Please refresh.</h2>")
+
+# -----------------------------------------------------------------------------
+# API ROUTES (SUPPORT BOTH /api/... AND /... PREFIXES)
+# -----------------------------------------------------------------------------
 @app.get("/api/health")
+@app.get("/health")
 def health_check():
     return {
         "status": "ONLINE",
@@ -234,10 +261,12 @@ def health_check():
     }
 
 @app.get("/api/diseases")
+@app.get("/diseases")
 def list_diseases():
     return {"status": "SUCCESS", "diseases": list(DISEASE_KB.values())}
 
 @app.post("/api/diagnose")
+@app.post("/diagnose")
 async def diagnose_leaf(file: UploadFile = File(...)):
     start_time = time.time()
     contents = await file.read()
@@ -278,8 +307,8 @@ async def diagnose_leaf(file: UploadFile = File(...)):
     }
 
 @app.get("/api/commercial-brands")
+@app.get("/commercial-brands")
 def get_commercial_brands(chemical: str = Query(...)):
-    # Look up brands matching the chemical composition
     for key, data in DISEASE_KB.items():
         if chemical.lower() in data["chemical_cibrc"].lower() or data["chemical_cibrc"].lower() in chemical.lower():
             return {
