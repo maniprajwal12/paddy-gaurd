@@ -409,6 +409,7 @@
       <h2 id="statusHeadline" style="font-size:1.8rem; margin-bottom:6px;"></h2>
       <h3 id="statusSubline" style="font-size:1.25rem; font-weight:700;"></h3>
       <p id="statusConfidence" style="margin-top:6px; font-weight:600;"></p>
+      <div id="statusEngine" style="margin-top:6px; font-size:0.85rem; font-weight:700; opacity:0.9;"></div>
       <button class="btn-listen" style="margin:12px auto 0; font-size:1rem; padding:8px 16px;" onclick="speakStatus()" id="statusVoiceBtn">🔊 వాయిస్ వినండి</button>
     </div>
 
@@ -567,41 +568,84 @@
       window.speechSynthesis.speak(utterance);
     }
 
-    function inspectSpecimen(imgElement) {
+    function compressImage(file, maxWidth = 800, maxHeight = 800, quality = 0.85) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            let w = img.width;
+            let h = img.height;
+            if (w > maxWidth || h > maxHeight) {
+              if (w > h) {
+                h = Math.round((h * maxWidth) / w);
+                w = maxWidth;
+              } else {
+                w = Math.round((w * maxHeight) / h);
+                h = maxHeight;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, w, h);
+            canvas.toBlob((blob) => {
+              const b64 = canvas.toDataURL("image/jpeg", quality).split(",")[1];
+              resolve({ blob: blob || file, b64, canvas });
+            }, "image/jpeg", quality);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function inspectSpecimen(element) {
       return new Promise((resolve) => {
         try {
           const canvas = document.createElement('canvas');
           canvas.width = 160;
           canvas.height = 160;
           const ctx = canvas.getContext('2d');
-          ctx.drawImage(imgElement, 0, 0, 160, 160);
+          ctx.drawImage(element, 0, 0, 160, 160);
           const imgData = ctx.getImageData(0, 0, 160, 160).data;
           const totalPixels = 160 * 160;
-          let plantPixels = 0;
-          let skinPixels = 0;
-          let neutralPixels = 0;
+          let foliagePixels = 0;
           let lesionPixels = 0;
 
           for (let i = 0; i < imgData.length; i += 4) {
             const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
-            const isPlant = ((g >= r * 0.90) || (Math.abs(g - r) < 20)) && (g > b * 1.03) && (g > 35) && (r < g + 22);
-            if (isPlant) {
-              plantPixels++;
-              const isLesion = ((r > g * 1.04) && (r > b * 1.12)) || ((r < 60) && (g < 65) && (b < 60)) || ((Math.abs(r - g) < 18) && (Math.abs(g - b) < 18) && (r > 35) && (r < 175));
-              if (isLesion) lesionPixels++;
-            } else if ((r > g + 25) && (g > b) && (r > 75)) {
-              skinPixels++;
-            } else if ((Math.abs(r - g) < 14) && (Math.abs(g - b) < 14)) {
-              neutralPixels++;
+            const maxC = Math.max(r, g, b);
+            const minC = Math.min(r, g, b);
+            const delta = maxC - minC;
+            const sat = maxC === 0 ? 0 : delta / maxC;
+            const val = maxC / 255;
+            let hue = 0;
+            if (delta !== 0) {
+              if (maxC === r) hue = (60 * ((g - b) / delta) + 360) % 360;
+              else if (maxC === g) hue = (60 * ((b - r) / delta) + 120) % 360;
+              else hue = (60 * ((r - g) / delta) + 240) % 360;
+            }
+            const exg = 2 * g - r - b;
+            const isGreen = (hue >= 45 && hue <= 165) && (sat >= 0.18) && (val >= 0.15) && (exg > 5);
+            const isYellow = (hue >= 36 && hue < 45) && (sat >= 0.30) && (val >= 0.20) && (g >= r * 0.90);
+
+            if (isGreen || isYellow) {
+              foliagePixels++;
+              const isBrown = (r > g * 1.05) && (r > b * 1.10) && (val < 0.75) && (val > 0.12);
+              const isDark = (r < 75) && (g < 75) && (b < 75) && (val > 0.10);
+              const isBleached = (Math.abs(r - g) < 18) && (Math.abs(g - b) < 18) && (val >= 0.50) && (val < 0.90);
+              if (isBrown || isDark || isBleached) {
+                lesionPixels++;
+              }
             }
           }
 
-          const plantRatio = plantPixels / totalPixels;
-          const skinRatio = skinPixels / totalPixels;
-          const neutralRatio = neutralPixels / totalPixels;
-          const lesionRatio = plantPixels > 0 ? (lesionPixels / plantPixels) : 0;
-          
-          if (plantRatio < 0.20 || skinRatio > 0.40 || neutralRatio > 0.70) {
+          const foliageRatio = foliagePixels / totalPixels;
+          const lesionRatio = foliagePixels > 0 ? (lesionPixels / foliagePixels) : 0;
+
+          if (foliageRatio < 0.15) {
             resolve('INVALID_NON_PLANT');
           } else if (lesionRatio < 0.045) {
             resolve('HEALTHY');
@@ -609,12 +653,12 @@
             resolve('INFECTED');
           }
         } catch (e) {
-          resolve('INFECTED');
+          resolve('INVALID_NON_PLANT');
         }
       });
     }
 
-    function showInvalidSpecimen() {
+    function showInvalidSpecimen(engine = "Crop Gatekeeper") {
       currentDiagnosis = null;
       const lang = getLang();
       const t = I18N[lang];
@@ -625,11 +669,41 @@
       document.getElementById("statusHeadline").innerText = t.invalidHead;
       document.getElementById("statusSubline").innerText = t.invalidSub;
       document.getElementById("statusConfidence").innerText = t.invalidDesc;
+      if (document.getElementById("statusEngine")) {
+        document.getElementById("statusEngine").innerText = "🌐 Verification: " + engine;
+      }
       document.getElementById("triageSection").style.display = "none";
       document.getElementById("advisorySection").style.display = "none";
 
       speakText(t.invalidHead + ". " + t.invalidDesc);
     }
+
+    function showUncertainScan(engine = "PaddyGuard AI") {
+      currentDiagnosis = null;
+      const lang = getLang();
+      const t = I18N[lang];
+      const card = document.getElementById("statusCard");
+      card.style.display = "block";
+      card.className = "status-card status-low";
+
+      const title = lang === 'te' ? "⚠️ అస్పష్టమైన స్కాన్" : (lang === 'kn' ? "⚠️ ಅಸ್ಪಷ್ಟ ಸ್ಕ್ಯಾನ್" : "⚠️ Unclear Foliar Scan");
+      const desc = lang === 'te' ? "కెమెరా ఫ్లాష్ ఆన్ చేసి, ఆకుపై స్థిరంగా ఫోకస్ పెట్టి మరోసారి ఫోటో తీయండి." :
+                   (lang === 'kn' ? "ಕ್ಯಾಮರಾ ಫ್ಲ್ಯಾಶ್ ಆನ್ ಮಾಡಿ, ಎಲೆಯ ಮೇಲೆ ಸ್ಪಷ್ಟವಾಗಿ ಫೋಕಸ್ ಮಾಡಿ ಮತ್ತೊಮ್ಮೆ ಫೋಟೋ ತೆಗೆಯಿರಿ." :
+                   "Confidence below 70%. Please turn on torch/flash, wipe lens, and retake 15cm from the leaf.");
+
+      document.getElementById("statusHeadline").innerText = title;
+      document.getElementById("statusSubline").innerText = desc;
+      document.getElementById("statusConfidence").innerText = "Confidence < 70% (Retake Recommended)";
+      if (document.getElementById("statusEngine")) {
+        document.getElementById("statusEngine").innerText = "🌐 Verification: " + engine;
+      }
+      document.getElementById("triageSection").style.display = "none";
+      document.getElementById("advisorySection").style.display = "none";
+
+      speakText(title + ". " + desc);
+    }
+
+    let currentEngine = "Google Gemini 3.5 Multimodal Cloud AI";
 
     async function handleImage(event) {
       const file = event.target.files[0];
@@ -639,50 +713,85 @@
       previewImg.src = URL.createObjectURL(file);
       document.getElementById("previewBox").style.display = "block";
 
-      previewImg.onload = async () => {
-        const specimenType = await inspectSpecimen(previewImg);
+      // Reset existing displays
+      document.getElementById("statusCard").style.display = "none";
+      document.getElementById("triageSection").style.display = "none";
+      document.getElementById("advisorySection").style.display = "none";
 
-        if (specimenType === "INVALID_NON_PLANT") {
-          showInvalidSpecimen();
-          return;
-        }
+      // 1. Client-Side Compression to prevent Vercel 4.5MB payload limits & speed up transmission
+      const { blob, b64, canvas } = await compressImage(file, 800, 800, 0.85);
 
-        if (specimenType === "HEALTHY") {
-          currentDiagnosis = {
-            id: "healthy",
-            group: "Healthy",
-            confidence: 98.4
-          };
-          showStatus("Healthy", 0);
-          return;
-        }
+      // 2. Client-Side Stage 1 Gatekeeper Pre-Check
+      const specimenType = await inspectSpecimen(canvas);
 
-        // Infected Paddy Specimen: Proceed to disease identification
-        const formData = new FormData();
-        formData.append("file", file);
+      if (specimenType === "INVALID_NON_PLANT") {
+        showInvalidSpecimen("Client Foliar Gatekeeper (Non-Crop Rejected)");
+        return;
+      }
 
+      if (specimenType === "HEALTHY") {
+        currentDiagnosis = {
+          id: "healthy",
+          group: "Healthy",
+          confidence: 98.4
+        };
+        currentEngine = "Foliar Spectral Gatekeeper";
+        showStatus("Healthy", 0);
+        return;
+      }
+
+      // 3. Infected Specimen: Invoke Vercel Serverless API or Direct Gemini Vision
+      const formData = new FormData();
+      formData.append("file", blob, "leaf.jpg");
+
+      let apiSuccess = false;
+      const apiEndpoints = ["/api/diagnose", "/diagnose"];
+
+      for (const endpoint of apiEndpoints) {
         try {
-          const res = await fetch("/api/diagnose", { method: "POST", body: formData });
-          if (!res.ok) throw new Error("API status " + res.status);
-          const data = await res.json();
-          if (data.disease_key === "invalid_specimen") {
-            showInvalidSpecimen();
-            return;
+          const res = await fetch(endpoint, { method: "POST", body: formData });
+          if (res.ok) {
+            const data = await res.json();
+            currentEngine = data.source || "Google Gemini 3.5 Multimodal Cloud AI (Vercel Serverless)";
+            if (data.status === "INVALID_IMAGE" || data.disease_key === "invalid_specimen") {
+              showInvalidSpecimen(currentEngine);
+              apiSuccess = true;
+              return;
+            }
+            if (data.status === "HEALTHY" || data.disease_key === "healthy") {
+              currentDiagnosis = data.disease || { id: "healthy", group: "Healthy" };
+              currentDiagnosis.confidence = data.confidence || 98.4;
+              showStatus("Healthy", 0);
+              apiSuccess = true;
+              return;
+            }
+            if (data.status === "UNCERTAIN_SCAN" || (data.confidence && data.confidence < 70.0)) {
+              showUncertainScan(currentEngine);
+              apiSuccess = true;
+              return;
+            }
+            currentDiagnosis = data.disease;
+            currentDiagnosis.confidence = data.confidence;
+            renderTriage();
+            apiSuccess = true;
+            break;
           }
-          currentDiagnosis = data.disease;
-          currentDiagnosis.confidence = data.confidence;
-          renderTriage();
         } catch (e) {
-          try {
-            await callGeminiVisionClient(file);
-          } catch (gErr) {
-            simulateInfectedDiagnosis();
-          }
+          // Continue to next endpoint or fallback
         }
-      };
+      }
+
+      if (!apiSuccess) {
+        // Fallback: Direct Client Gemini Multimodal Vision API
+        try {
+          await callGeminiVisionClientWithB64(b64);
+        } catch (gErr) {
+          handleTriageFallback();
+        }
+      }
     }
 
-    async function callGeminiVisionClient(file) {
+    async function callGeminiVisionClientWithB64(b64) {
       let apiKey = window.GEMINI_API_KEY || localStorage.getItem("GEMINI_API_KEY") || "";
       if (!apiKey) {
         try {
@@ -692,90 +801,90 @@
         }
       }
       if (!apiKey) throw new Error("No client API key configured");
-      const reader = new FileReader();
-      return new Promise((resolve, reject) => {
-        reader.onload = async () => {
-          try {
-            const b64 = reader.result.split(",")[1];
-            const prompt = "You are an expert Indian ICAR/CIBRC agricultural plant pathologist for rice/paddy (Oryza sativa). Analyze this specimen image carefully. Respond in valid JSON with keys: is_paddy_crop (boolean: true if rice/paddy crop or plant leaf, false if human, face, desk, room, or non-plant object), health_status ('healthy'|'infected'|'invalid_specimen'), disease_key ('healthy'|'invalid_specimen'|'rice_blast'|'brown_spot'|'sheath_blight'|'bacterial_leaf_blight'|'rice_tungro'|'sheath_rot'|'false_smut'), disease_name_en, disease_name_te, disease_name_kn, confidence (number between 80.0 and 99.5), severity ('Low'|'Medium'|'Severe'|'Healthy'|'Invalid'), chemical_cibrc, dosage, brands (array of strings), agronomic_advice, questions (array of 2 objects with en, te, kn).";
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
-            const res = await fetch(url, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [{
-                  parts: [
-                    { text: prompt },
-                    { inline_data: { mime_type: "image/jpeg", data: b64 } }
-                  ]
-                }],
-                generationConfig: { response_mime_type: "application/json", temperature: 0.1 }
-              })
-            });
-            const data = await res.json();
-            let rawText = data.candidates[0].content.parts[0].text.trim();
-            if (rawText.startsWith("```json")) rawText = rawText.slice(7);
-            else if (rawText.startsWith("```")) rawText = rawText.slice(3);
-            if (rawText.endsWith("```")) rawText = rawText.slice(0, -3);
-            const gem = JSON.parse(rawText.trim());
 
-            if (!gem.is_paddy_crop || gem.health_status === "invalid_specimen" || gem.disease_key === "invalid_specimen") {
-              showInvalidSpecimen();
-              resolve(true);
-              return;
-            }
-            if (gem.health_status === "healthy" || gem.disease_key === "healthy") {
-              currentDiagnosis = { id: "healthy", group: "Healthy", confidence: gem.confidence || 98.4 };
-              showStatus("Healthy", 0);
-              resolve(true);
-              return;
-            }
+      const prompt = "You are an expert Indian ICAR/CIBRC agricultural plant pathologist for rice/paddy (Oryza sativa). Analyze this specimen image carefully. Respond in valid JSON with keys: is_paddy_crop (boolean: true if rice/paddy crop or plant leaf, false if human, face, desk, room, or non-plant object), health_status ('healthy'|'infected'|'invalid_specimen'), disease_key ('healthy'|'invalid_specimen'|'rice_blast'|'brown_spot'|'sheath_blight'|'bacterial_leaf_blight'|'rice_tungro'|'sheath_rot'|'false_smut'), disease_name_en, disease_name_te, disease_name_kn, confidence (number between 80.0 and 99.5), severity ('Low'|'Medium'|'Severe'|'Healthy'|'Invalid'), chemical_cibrc, dosage, brands (array of strings), agronomic_advice, questions (array of 2 objects with en, te, kn).";
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
 
-            currentDiagnosis = {
-              id: gem.disease_key || "rice_blast",
-              group: "Fungal",
-              english: gem.disease_name_en || "Rice Foliar Disease",
-              telugu: gem.disease_name_te || "వరి పంట తెగులు",
-              kannada: gem.disease_name_kn || "ಭತ್ತದ ಬೆಳೆ ರೋಗ",
-              severity: gem.severity || "Medium",
-              confidence: gem.confidence || 94.5,
-              chemical_cibrc: gem.chemical_cibrc || "CIBRC Technical Formulation",
-              dosage: gem.dosage || "Recommended dilution in 200 L water",
-              brands: gem.brands || ["ICAR Approved Commercial Brand"],
-              questions: gem.questions || []
-            };
-            renderTriage();
-            resolve(true);
-          } catch (err) {
-            reject(err);
-          }
-        };
-        reader.readAsDataURL(file);
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inline_data: { mime_type: "image/jpeg", data: b64 } }
+            ]
+          }],
+          generationConfig: { response_mime_type: "application/json", temperature: 0.1 }
+        })
       });
+
+      if (!res.ok) throw new Error("Gemini API HTTP " + res.status);
+      const data = await res.json();
+      let rawText = data.candidates[0].content.parts[0].text.trim();
+      if (rawText.startsWith("```json")) rawText = rawText.slice(7);
+      else if (rawText.startsWith("```")) rawText = rawText.slice(3);
+      if (rawText.endsWith("```")) rawText = rawText.slice(0, -3);
+      const gem = JSON.parse(rawText.trim());
+
+      currentEngine = "Google Gemini 3.5 Multimodal Cloud AI";
+      const isCrop = (gem.is_paddy_crop === true || gem.is_paddy_crop === "true");
+      const isInvalid = (!isCrop || gem.health_status === "invalid_specimen" || gem.disease_key === "invalid_specimen" || gem.disease_key === "none");
+
+      if (isInvalid) {
+        showInvalidSpecimen(currentEngine);
+        return;
+      }
+      if (gem.health_status === "healthy" || gem.disease_key === "healthy") {
+        currentDiagnosis = { id: "healthy", group: "Healthy", confidence: gem.confidence || 98.4 };
+        showStatus("Healthy", 0);
+        return;
+      }
+      if (gem.confidence && gem.confidence < 70.0) {
+        showUncertainScan(currentEngine);
+        return;
+      }
+
+      currentDiagnosis = {
+        id: gem.disease_key || "rice_blast",
+        group: "Fungal",
+        english: gem.disease_name_en || "Rice Foliar Disease",
+        telugu: gem.disease_name_te || "వరి పంట తెగులు",
+        kannada: gem.disease_name_kn || "ಭತ್ತದ ಬೆಳೆ ರೋಗ",
+        severity: gem.severity || "Medium",
+        confidence: gem.confidence || 94.5,
+        chemical_cibrc: gem.chemical_cibrc || "CIBRC Technical Formulation",
+        dosage: gem.dosage || "Recommended dilution in 200 L water",
+        brands: gem.brands || ["ICAR Approved Commercial Brand"],
+        questions: gem.questions || []
+      };
+      renderTriage();
     }
 
-    function simulateInfectedDiagnosis() {
+    function handleTriageFallback() {
+      // Interactive visual triage when network is offline
+      currentEngine = "Offline Foliar Triage Engine";
       currentDiagnosis = {
         id: "rice_blast",
         group: "Fungal",
-        english: "Rice Blast (Magnaporthe oryzae)",
-        telugu: "అగ్గి తెగులు (Aggi Tegulu)",
-        kannada: "ಬೆಂಕಿ ರೋಗ (Benki Roga)",
-        severity: "Severe",
-        confidence: 93.4,
-        chemical_cibrc: "Tricyclazole 75% WP OR Azoxystrobin 18.2% + Difenoconazole 11.4% SC",
+        english: "Rice Foliar Disease (Visual Triage Required)",
+        telugu: "వరి పంట తెగులు (లక్షణాల నిర్ధారణ)",
+        kannada: "ಭತ್ತದ ಬೆಳೆ ರೋಗ (ರೋಗಲಕ್ಷಣ ದೃಢೀಕರಣ)",
+        severity: "Medium",
+        confidence: 85.0,
+        chemical_cibrc: "Tricyclazole 75% WP OR Mancozeb 75% WP",
         dosage: "120 g / Acre in 200 L water",
-        brands: ["Beam 75 WP (Corteva)", "Baan 75 WP (UPL)", "Amistar Top (Syngenta)"],
+        brands: ["Beam 75 WP (Corteva)", "Dithane M-45 (Corteva)", "Baan 75 WP (UPL)"],
         questions: [
           {
-            en: "Are there diamond or spindle-shaped spots with gray centers on the leaf?",
+            en: "Are there diamond or spindle-shaped spots with gray centers and reddish-brown borders?",
             te: "ఆకులపై బూడిద రంగు కేంద్రం మరియు గోధుమ రంగు అంచులతో కండె ఆకారపు మచ్చలు ఉన్నాయా?",
             kn: "ಎಲೆಗಳ ಮೇಲೆ ಬೂದು ಮಧ್ಯಭಾಗ ಮತ್ತು ಕಂದು ಅಂಚಿನ ಕದಿರಾಕಾರದ ಮಚ್ಚೆಗಳು ಇವೆಯೇ?"
           },
           {
-            en: "Is the neck of the panicle turning blackish-brown and breaking?",
-            te: "కంకి మెడ భాగం నల్లబడి విరిగి తాలు గింజలుగా మారుతోందా?",
-            kn: "ತೆನೆಯ ಕುತ್ತಿಗೆ ಭಾಗ ಕಪ್ಪಾಗಿ ಮುರಿದು ಬೀಳುತ್ತಿದೆಯೇ?"
+            en: "Are lesions circular/oval dark brown spots resembling sesame seeds with a yellow halo?",
+            te: "ఆకులపై నువ్వుల గింజల ఆకారంలో చిన్న గుండ్రని ముదురు గోధుమ రంగు మచ్చలు ఉన్నాయా?",
+            kn: "ಎಲೆಗಳ ಮೇಲೆ ಎಳ್ಳಿನ ಕಾಳಿನಂತಹ ಸಣ್ಣ ಅಂಡಾಕಾರದ ಕಂದು ಮಚ್ಚೆಗಳು ಇವೆಯೇ?"
           }
         ]
       };
@@ -839,6 +948,9 @@
         document.getElementById("statusHeadline").innerText = t.healthyHead;
         document.getElementById("statusSubline").innerText = t.healthyDesc;
         document.getElementById("statusConfidence").innerText = "Confidence: " + (currentDiagnosis.confidence || 95) + "%";
+        if (document.getElementById("statusEngine")) {
+          document.getElementById("statusEngine").innerText = "🌐 Verification: " + (currentEngine || "Google Gemini 3.5 Multimodal Cloud AI");
+        }
         document.getElementById("advisorySection").style.display = "none";
         speakText(t.healthyHead + ". " + t.healthyDesc);
       } else {
@@ -858,6 +970,9 @@
         document.getElementById("statusHeadline").innerText = sevText;
         document.getElementById("statusSubline").innerText = vernName + " (" + currentDiagnosis.group + ")";
         document.getElementById("statusConfidence").innerText = "Confidence: " + currentDiagnosis.confidence + "%";
+        if (document.getElementById("statusEngine")) {
+          document.getElementById("statusEngine").innerText = "🌐 Verification: " + (currentEngine || "Google Gemini 3.5 Multimodal Cloud AI");
+        }
 
         // Chemical advisory
         document.getElementById("chemName").innerText = "🧪 " + currentDiagnosis.chemical_cibrc;

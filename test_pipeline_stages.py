@@ -21,28 +21,40 @@ def analyze_foliar_spectral_gatekeeper(image: Image.Image):
     total_pixels = r.size
 
     # Biological vegetation mask: In live paddy foliage (chlorophyll a/b), Green is dominant or balanced with yellow
-    # Red is never significantly greater than Green due to strong 680nm chlorophyll absorption.
-    is_plant = ((g >= r * 0.90) | (abs(g - r) < 20)) & (g > b * 1.03) & (g > 35) & (r < g + 22)
+    max_c = np.maximum(np.maximum(r, g), b)
+    min_c = np.minimum(np.minimum(r, g), b)
+    delta = max_c - min_c
+
+    sat = np.zeros_like(max_c)
+    nonzero = (max_c > 0)
+    sat[nonzero] = delta[nonzero] / max_c[nonzero]
+    val = max_c / 255.0
+
+    hue = np.zeros_like(max_c)
+    d_nonzero = (delta > 0)
+    mask_r = d_nonzero & (max_c == r)
+    hue[mask_r] = (60.0 * ((g[mask_r] - b[mask_r]) / delta[mask_r]) + 360.0) % 360.0
+    mask_g = d_nonzero & (max_c == g) & (~mask_r)
+    hue[mask_g] = (60.0 * ((b[mask_g] - r[mask_g]) / delta[mask_g]) + 120.0) % 360.0
+    mask_b = d_nonzero & (~mask_r) & (~mask_g)
+    hue[mask_b] = (60.0 * ((r[mask_b] - g[mask_b]) / delta[mask_b]) + 240.0) % 360.0
+
+    exg = 2.0 * g - r - b
+    is_green = (hue >= 45.0) & (hue <= 165.0) & (sat >= 0.18) & (val >= 0.15) & (exg > 5.0)
+    is_yellow = (hue >= 36.0) & (hue < 45.0) & (sat >= 0.30) & (val >= 0.20) & (g >= r * 0.90)
+    is_plant = is_green | is_yellow
     plant_pixels = int(np.sum(is_plant))
     plant_ratio = plant_pixels / total_pixels
 
-    # Human skin / warm non-crop check: R is dominant over G, with G > B
-    is_skin = (r > g + 25) & (g > b) & (r > 75)
-    skin_ratio = int(np.sum(is_skin)) / total_pixels
-
-    # Neutral / grey / dark background check (desks, walls, screens)
-    is_neutral = (abs(r - g) < 14) & (abs(g - b) < 14)
-    neutral_ratio = int(np.sum(is_neutral)) / total_pixels
-
-    if plant_ratio < 0.20 or skin_ratio > 0.40 or neutral_ratio > 0.70:
+    if plant_ratio < 0.15:
         return "INVALID_NON_PLANT", plant_ratio, 0.0
 
     # Stage 2 Pre-Check: Foliar Lesion / Necrosis Area Ratio on plant pixels
     # Fungal lesions appear as brownish/grey necrotic spots with margins
     is_lesion = is_plant & (
-        ((r > g * 1.04) & (r > b * 1.12)) | \
-        ((r < 60) & (g < 65) & (b < 60)) | \
-        ((abs(r - g) < 18) & (abs(g - b) < 18) & (r > 35) & (r < 175))
+        ((r > g * 1.05) & (r > b * 1.10) & (val < 0.75) & (val > 0.12)) | \
+        ((r < 75) & (g < 75) & (b < 75) & (val > 0.10)) | \
+        ((abs(r - g) < 18) & (abs(g - b) < 18) & (val >= 0.50) & (val < 0.90))
     )
     lesion_pixels = int(np.sum(is_lesion))
     lesion_ratio = lesion_pixels / max(plant_pixels, 1)
@@ -197,9 +209,13 @@ if __name__ == "__main__":
     print(" 🌾 PADDYGUARD AI: 2-STAGE VERIFICATION PIPELINE AUTOMATED TESTS")
     print("===================================================================")
 
-    # 1. Non-Plant Specimen (Human Face / Skin / Wall RGB 215, 170, 135)
+    # 1. Non-Plant Specimen (Human Face / Skin RGB 215, 170, 135)
     img_non_plant = Image.fromarray(np.full((250, 250, 3), [215, 170, 135], dtype=np.uint8))
     res1 = run_pipeline(img_non_plant, weights_path, classes)
+
+    # 1B. Non-Plant Specimen (Wooden Desk / Beige Surface RGB 180, 168, 145)
+    img_desk = Image.fromarray(np.full((250, 250, 3), [180, 168, 145], dtype=np.uint8))
+    res1b = run_pipeline(img_desk, weights_path, classes)
 
     # 2. Healthy Green Paddy Leaf (Vibrant Chlorophyll RGB 35, 160, 45)
     img_healthy = Image.fromarray(np.full((250, 250, 3), [35, 160, 45], dtype=np.uint8))
@@ -216,7 +232,8 @@ if __name__ == "__main__":
     res3 = run_pipeline(img_diseased, weights_path, classes)
 
     tests = [
-        ("TEST 1: Non-Plant Specimen (Human Face / Room / Object)", res1, "INVALID_IMAGE"),
+        ("TEST 1: Non-Plant Specimen (Human Face / Skin)", res1, "INVALID_IMAGE"),
+        ("TEST 1B: Non-Plant Specimen (Wooden Desk / Beige Room)", res1b, "INVALID_IMAGE"),
         ("TEST 2: Healthy Paddy Crop (Clean Vibrant Foliage)", res2, "HEALTHY"),
         ("TEST 3: Real Diseased Leaf (Rice Blast Pathogen)", res3, "DISEASE_DETECTED")
     ]
