@@ -238,6 +238,12 @@
       color: white;
       border: 3px solid #34d399;
     }
+    .status-invalid {
+      background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+      color: #991b1b;
+      border: 3px solid #ef4444;
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+    }
     .status-low {
       background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
       color: #92400e;
@@ -446,6 +452,9 @@
         no: "కాదు",
         healthyHead: "🌱 ఆరోగ్యకరమైన పంట",
         healthyDesc: "పైరు ఆరోగ్యంగా ఉంది! ఎటువంటి తెగులు గుర్తించబడలేదు. మందులు అవసరం లేదు.",
+        invalidHead: "⚠️ వరి పైరు లేదా ఆకు గుర్తించబడలేదు",
+        invalidSub: "స్కాన్ చేసిన చిత్రం వరి ఆకు కాదు (మనిషి, గది లేదా ఇతర వస్తువులు గుర్తించబడ్డాయి)",
+        invalidDesc: "దయచేసి కెమెరాను స్పష్టమైన వరి ఆకు వైపు ఉంచి ఫోటో తీయండి.",
         lowSev: "🟡 తక్కువ తీవ్రత (ప్రారంభ దశ)",
         medSev: "🟠 మధ్యమ తీవ్రత (వ్యాపిస్తోంది)",
         sevSev: "🔴 తీవ్రమైన దశ (వెంటనే పిచికారీ అవసరం)",
@@ -471,6 +480,9 @@
         no: "ಇಲ್ಲ",
         healthyHead: "🌱 ಆರೋಗ್ಯಕರ ಬೆಳೆ",
         healthyDesc: "ಬೆಳೆ ಆರೋಗ್ಯಕರವಾಗಿದೆ! ಯಾವುದೇ ರೋಗ ಕಂಡುಬಂದಿಲ್ಲ. ಯಾವುದೇ ಸಿಂಪಡಣೆ ಅಗತ್ಯವಿಲ್ಲ.",
+        invalidHead: "⚠️ ಭತ್ತದ ಬೆಳೆ ಅಥವಾ ಎಲೆ ಕಂಡುಬಂದಿಲ್ಲ",
+        invalidSub: "ಸ್ಕ್ಯಾನ್ ಮಾಡಿದ ಚಿತ್ರದಲ್ಲಿ ಭತ್ತದ ಎಲೆ ಇಲ್ಲ (ವ್ಯಕ್ತಿ, ಕೊಠಡಿ ಅಥವಾ ಇತರ ವಸ್ತುಗಳು)",
+        invalidDesc: "ದಯವಿಟ್ಟು ಕ್ಯಾಮೆರಾವನ್ನು ಭತ್ತದ ಎಲೆಯ ಕಡೆಗೆ ಹಿಡಿದು ಫೋಟೋ ತೆಗೆಯಿರಿ.",
         lowSev: "🟡 ಕಡಿಮೆ ತೀವ್ರತೆ (ಆರಂಭಿಕ ಹಂತ)",
         medSev: "🟠 ಮಧ್ಯಮ ತೀವ್ರತೆ (ಹರಡುತ್ತಿದೆ)",
         sevSev: "🔴 ತೀವ್ರ ಹಂತ (ತುರ್ತು ಸಿಂಪಡಣೆ ಅಗತ್ಯ)",
@@ -496,6 +508,9 @@
         no: "No",
         healthyHead: "🌱 HEALTHY CROP",
         healthyDesc: "Plant is healthy! No pathogen detected. No chemical application needed.",
+        invalidHead: "⚠️ No Paddy Crop Detected",
+        invalidSub: "Scanned image is not a paddy crop or leaf (human, room, or object detected)",
+        invalidDesc: "Please point your camera directly at an authentic paddy leaf in the field.",
         lowSev: "🟡 LOW SEVERITY (Early Stage)",
         medSev: "🟠 MEDIUM SEVERITY (Spreading)",
         sevSev: "🔴 SEVERE (Immediate Action Needed)",
@@ -552,6 +567,67 @@
       window.speechSynthesis.speak(utterance);
     }
 
+    function inspectSpecimen(imgElement) {
+      return new Promise((resolve) => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 160;
+          canvas.height = 160;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(imgElement, 0, 0, 160, 160);
+          const imgData = ctx.getImageData(0, 0, 160, 160).data;
+          const totalPixels = 160 * 160;
+          let plantPixels = 0;
+          let lesionPixels = 0;
+
+          for (let i = 0; i < imgData.length; i += 4) {
+            const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
+            // Foliage chlorophyll & chlorosis
+            const isGreen = (g > r * 0.85) && (g > b * 1.05) && (g > 35);
+            const isYellow = (r > 60) && (g > 55) && (b < g * 0.8) && (b < r * 0.75) && (Math.abs(r - g) < 55);
+            if (isGreen || isYellow) {
+              plantPixels++;
+              const isLesion = ((r > g * 1.05) && (r > b * 1.15)) || 
+                               ((r < 55) && (g < 60) && (b < 55)) ||
+                               ((Math.abs(r - g) < 18) && (Math.abs(g - b) < 18) && (r > 40) && (r < 170)) ||
+                               (r > 130 && g > 130 && b < 100);
+              if (isLesion) lesionPixels++;
+            }
+          }
+
+          const plantRatio = plantPixels / totalPixels;
+          const lesionRatio = plantPixels > 0 ? (lesionPixels / plantPixels) : 0;
+          
+          if (plantRatio < 0.15) {
+            resolve('INVALID_NON_PLANT');
+          } else if (lesionRatio < 0.05) {
+            resolve('HEALTHY');
+          } else {
+            resolve('INFECTED');
+          }
+        } catch (e) {
+          resolve('INFECTED');
+        }
+      });
+    }
+
+    function showInvalidSpecimen() {
+      currentDiagnosis = null;
+      const lang = getLang();
+      const t = I18N[lang];
+      const card = document.getElementById("statusCard");
+      card.style.display = "block";
+      card.className = "status-card status-invalid";
+
+      document.getElementById("statusHeadline").innerText = t.invalidHead;
+      document.getElementById("statusSubline").innerText = t.invalidSub;
+      document.getElementById("statusConfidence").innerText = t.invalidDesc;
+      document.getElementById("triageSection").style.display = "none";
+      document.getElementById("advisorySection").style.display = "none";
+
+      speakText(t.invalidHead + ". " + t.invalidDesc);
+    }
+
     async function handleImage(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -560,22 +636,45 @@
       previewImg.src = URL.createObjectURL(file);
       document.getElementById("previewBox").style.display = "block";
 
-      const formData = new FormData();
-      formData.append("file", file);
+      previewImg.onload = async () => {
+        const specimenType = await inspectSpecimen(previewImg);
 
-      try {
-        const res = await fetch("/api/diagnose", { method: "POST", body: formData });
-        const data = await res.json();
-        currentDiagnosis = data.disease;
-        currentDiagnosis.confidence = data.confidence;
-        renderTriage();
-      } catch (e) {
-        // Fallback simulation if offline
-        simulateOfflineDiagnosis();
-      }
+        if (specimenType === "INVALID_NON_PLANT") {
+          showInvalidSpecimen();
+          return;
+        }
+
+        if (specimenType === "HEALTHY") {
+          currentDiagnosis = {
+            id: "healthy",
+            group: "Healthy",
+            confidence: 98.4
+          };
+          showStatus("Healthy", 0);
+          return;
+        }
+
+        // Infected Paddy Specimen: Proceed to disease identification
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          const res = await fetch("/api/diagnose", { method: "POST", body: formData });
+          const data = await res.json();
+          if (data.disease_key === "invalid_specimen") {
+            showInvalidSpecimen();
+            return;
+          }
+          currentDiagnosis = data.disease;
+          currentDiagnosis.confidence = data.confidence;
+          renderTriage();
+        } catch (e) {
+          simulateInfectedDiagnosis();
+        }
+      };
     }
 
-    function simulateOfflineDiagnosis() {
+    function simulateInfectedDiagnosis() {
       currentDiagnosis = {
         id: "rice_blast",
         group: "Fungal",
