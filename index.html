@@ -145,8 +145,17 @@
       border: 2.5px solid transparent;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
+      width: 100%;
+      font-family: inherit;
+      outline: none;
     }
-    .scan-card input { display: none; }
+    .scan-card input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
     .camera-card {
       background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
       border-color: #10b981;
@@ -359,21 +368,21 @@
       <div class="section-desc" id="scanDesc">కెమెరాతో తెగులు సోకిన ఆకును ఫోటో తీయండి లేదా ఫోన్ నుండి అప్‌లోడ్ చేయండి.</div>
 
       <div class="scan-options-grid">
-        <!-- Separate Camera Button (direct live camera on phone & desktop) -->
-        <label class="scan-card camera-card" for="cameraInput">
+        <!-- Dedicated Live Camera Button (Direct camera capture on phone & desktop) -->
+        <button type="button" class="scan-card camera-card" id="cameraBtn" onclick="triggerInput('cameraInput')">
           <div class="scan-card-icon">📸</div>
           <div class="scan-card-title" id="cameraTitle">కెమెరాతో ఫోటో తీయండి</div>
           <div class="scan-card-subtitle" id="cameraSubtitle">నేరుగా లైవ్ కెమెరా తెరవండి (Phone Camera)</div>
           <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleImage(event)">
-        </label>
+        </button>
 
-        <!-- Separate Upload Button (gallery & file picker on phone & desktop) -->
-        <label class="scan-card upload-card" for="galleryInput">
+        <!-- Dedicated Gallery/Storage Button (Gallery/file picker on phone & desktop) -->
+        <button type="button" class="scan-card upload-card" id="uploadBtn" onclick="triggerInput('galleryInput')">
           <div class="scan-card-icon">📁</div>
           <div class="scan-card-title" id="uploadTitle">గ్యాలరీ నుండి అప్‌లోడ్ చేయండి</div>
           <div class="scan-card-subtitle" id="uploadSubtitle">ఫోన్ గ్యాలరీ లేదా ఫైల్స్ నుండి ఎంచుకోండి (Gallery/Files)</div>
           <input type="file" id="galleryInput" accept="image/*" onchange="handleImage(event)">
-        </label>
+        </button>
       </div>
 
       <div class="preview-box" id="previewBox">
@@ -493,6 +502,11 @@
         offlineNotice: "📡 Offline Mode: Commercial brand names hidden to save bandwidth."
       }
     };
+
+    function triggerInput(inputId) {
+      const input = document.getElementById(inputId);
+      if (input) input.click();
+    }
 
     let currentDiagnosis = null;
     let isOnline = true;

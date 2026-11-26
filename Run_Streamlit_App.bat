@@ -12,6 +12,6 @@ if not exist "app.py" (
         cd /d "%~dp0paddyguard_vercel"
     )
 )
-echo Starting Streamlit server...
-python -m streamlit run app.py
+echo Starting Streamlit server with live reloading...
+python -m streamlit run app.py --server.runOnSave true --server.port 8501
 pause

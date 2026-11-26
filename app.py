@@ -603,24 +603,58 @@ def main():
         st.session_state["severity_override"] = None
 
     # -------------------------------------------------------------------------
-    # STEP 1: CAMERA SCANNER & IMAGE UPLOAD (SEPARATE TABS FOR PHONE & DESKTOP)
+    # STEP 1: CAMERA SCANNER & IMAGE UPLOAD (SEPARATE BUTTONS FOR PHONE & DESKTOP)
     # -------------------------------------------------------------------------
     st.markdown(f"### {T['scanner_title']}")
     st.caption(T['scanner_help'])
 
-    tab_cam, tab_up = st.tabs([f"📸 {T['tab_camera']}", f"📁 {T['tab_upload']}"])
-    
+    if "input_method" not in st.session_state:
+        st.session_state["input_method"] = "camera"
+
+    # Distinct separate buttons for Camera and Upload (Full width & touch-ready for phone and desktop)
+    btn_col1, btn_col2 = st.columns(2)
+    with btn_col1:
+        cam_active = (st.session_state["input_method"] == "camera")
+        if st.button(
+            f"📸 {T['tab_camera']}",
+            key="btn_mode_camera",
+            use_container_width=True,
+            type="primary" if cam_active else "secondary"
+        ):
+            st.session_state["input_method"] = "camera"
+            st.rerun()
+
+    with btn_col2:
+        up_active = (st.session_state["input_method"] == "upload")
+        if st.button(
+            f"📁 {T['tab_upload']}",
+            key="btn_mode_upload",
+            use_container_width=True,
+            type="primary" if up_active else "secondary"
+        ):
+            st.session_state["input_method"] = "upload"
+            st.rerun()
+
     image_file = None
-    with tab_cam:
-        st.markdown(f"##### {T['take_photo']}")
+    if st.session_state["input_method"] == "camera":
+        st.markdown(f"""
+        <div style="background:#ecfdf5; border:2px solid #10b981; border-radius:14px; padding:14px 18px; margin:12px 0 16px 0;">
+            <div style="color:#065f46; font-weight:700; font-size:1.05rem;">📸 {T['take_photo']}</div>
+            <div style="color:#047857; font-size:0.85rem; margin-top:2px;">Phone / Webcam live camera mode active</div>
+        </div>
+        """, unsafe_allow_html=True)
         camera_img = st.camera_input(label=T['take_photo'], label_visibility="collapsed")
         if camera_img:
             image_file = camera_img
-
-    with tab_up:
-        st.markdown(f"##### {T['upload_fallback']}")
+    else:
+        st.markdown(f"""
+        <div style="background:#eff6ff; border:2px solid #3b82f6; border-radius:14px; padding:14px 18px; margin:12px 0 16px 0;">
+            <div style="color:#1e40af; font-weight:700; font-size:1.05rem;">📁 {T['upload_fallback']}</div>
+            <div style="color:#1d4ed8; font-size:0.85rem; margin-top:2px;">Phone gallery / file storage mode active</div>
+        </div>
+        """, unsafe_allow_html=True)
         uploaded_img = st.file_uploader(label=T['upload_fallback'], type=["jpg", "jpeg", "png"], label_visibility="collapsed")
-        if uploaded_img and not image_file:
+        if uploaded_img:
             image_file = uploaded_img
 
     # Reset trigger if new image provided
