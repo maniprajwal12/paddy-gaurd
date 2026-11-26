@@ -460,28 +460,32 @@ async def diagnose_leaf(file: UploadFile = File(...), api_key: str = Query(None)
     pixels = list(thumb.getdata())
     total_pixels = len(pixels)
     plant_pixels = 0
+    skin_pixels = 0
+    neutral_pixels = 0
     lesion_pixels = 0
 
     for r, g, b in pixels:
-        is_green = (g > r * 0.85) and (g > b * 1.05) and (g > 35)
-        is_yellow = (r > 60) and (g > 55) and (b < g * 0.8) and (b < r * 0.75) and (abs(r - g) < 55)
-        if is_green or is_yellow:
+        is_plant = ((g >= r * 0.90) or (abs(g - r) < 20)) and (g > b * 1.03) and (g > 35) and (r < g + 22)
+        if is_plant:
             plant_pixels += 1
-            is_lesion = ((r > g * 1.05) and (r > b * 1.15)) or \
-                        ((r < 55) and (g < 60) and (b < 55)) or \
-                        ((abs(r - g) < 18) and (abs(g - b) < 18) and (r > 40) and (r < 170)) or \
-                        (r > 130 and g > 130 and b < 100)
+            is_lesion = ((r > g * 1.04) and (r > b * 1.12)) or ((r < 60) and (g < 65) and (b < 60)) or ((abs(r - g) < 18) and (abs(g - b) < 18) and (r > 35) and (r < 175))
             if is_lesion:
                 lesion_pixels += 1
+        elif (r > g + 25) and (g > b) and (r > 75):
+            skin_pixels += 1
+        elif (abs(r - g) < 14) and (abs(g - b) < 14):
+            neutral_pixels += 1
 
     plant_ratio = plant_pixels / total_pixels
-    lesion_ratio = (lesion_pixels / plant_pixels) if plant_pixels > 0 else 0.0
+    skin_ratio = skin_pixels / total_pixels
+    neutral_ratio = neutral_pixels / total_pixels
+    lesion_ratio = (lesion_pixels / max(plant_pixels, 1))
     latency = round((time.time() - start_time) * 1000, 2)
 
     # 1. Non-Plant Specimen Check (Human, room, desk, electronics)
-    if plant_ratio < 0.15:
+    if plant_ratio < 0.20 or skin_ratio > 0.40 or neutral_ratio > 0.70:
         return {
-            "status": "INVALID_SPECIMEN",
+            "status": "INVALID_IMAGE",
             "inference_latency_ms": latency,
             "disease_key": "invalid_specimen",
             "confidence": 99.2,
@@ -489,7 +493,7 @@ async def diagnose_leaf(file: UploadFile = File(...), api_key: str = Query(None)
         }
 
     # 2. Healthy clean foliage
-    if lesion_ratio < 0.05:
+    if lesion_ratio < 0.045:
         return {
             "status": "HEALTHY",
             "inference_latency_ms": latency,

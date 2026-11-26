@@ -160,6 +160,18 @@ KNOWLEDGE_BASE = {
         "brands": ["None needed - Organic Bio-stimulants optional (e.g., Seaweed extract, Panchagavya)"],
         "questions": []
     },
+    "uncertain": {
+        "group": "Uncertain",
+        "disease_key": "uncertain",
+        "english": "Uncertain Scan (Confidence < 70% Safety Threshold)",
+        "telugu": "నిర్ధారణ కాలేదు (తక్కువ స్పష్టత < 70%)",
+        "kannada": "ಖಚಿತವಾಗಿಲ್ಲ (ಕಡಿಮೆ ಸ್ಪಷ್ಟತೆ < 70%)",
+        "chemical_cibrc": "No chemicals prescribed. Retake photo under clear daylight with phone torch on.",
+        "dosage": "None",
+        "brands": [],
+        "agronomic_advice": "Do not apply chemical sprays without confirmed pathogen identification. Inspect adjacent plants in the field.",
+        "questions": []
+    },
     "brown_spot": {
         "group": "Fungal",
         "disease_key": "brown_spot",
@@ -759,53 +771,62 @@ def predict_with_gemini_vision(image: Image.Image, api_key: str = None) -> dict:
 
 def analyze_foliar_specimen(image: Image.Image):
     """
-    Evaluates whether the scanned image contains authentic agricultural foliage (paddy leaf)
-    versus non-plant objects (humans, faces, furniture, walls, electronics).
-    Also measures the foliar lesion/necrosis index to differentiate healthy vs diseased crops.
+    Stage 1 Offline Gatekeeper:
+    Uses botanical chromatic & chlorophyll spectral ratios to reject non-plant images
+    (human faces, skin tones, furniture, desks, walls, screens, neutral objects).
+    Also measures the necrotic/chlorotic lesion ratio to identify healthy crops.
     """
     img_rgb = np.array(image.convert("RGB"), dtype=np.float32)
     r, g, b = img_rgb[:, :, 0], img_rgb[:, :, 1], img_rgb[:, :, 2]
     total_pixels = r.size
 
-    # Foliage / Vegetation Spectral Mask
-    # In live paddy leaves, Green channel is dominant, and distinct from skin or indoor items
-    is_green = (g > r * 0.85) & (g > b * 1.05) & (g > 35)
-    # Chlorotic/yellowing paddy leaf tissue
-    is_yellow = (r > 60) & (g > 55) & (b < g * 0.8) & (b < r * 0.75) & (np.abs(r - g) < 55)
-    foliar_mask = is_green | is_yellow
-    plant_pixels = int(np.sum(foliar_mask))
+    # Biological vegetation mask: In live paddy foliage (chlorophyll a/b), Green is dominant or balanced with yellow
+    # Red is never significantly greater than Green due to strong 680nm chlorophyll absorption.
+    is_plant = ((g >= r * 0.90) | (abs(g - r) < 20)) & (g > b * 1.03) & (g > 35) & (r < g + 22)
+    plant_pixels = int(np.sum(is_plant))
     plant_ratio = plant_pixels / total_pixels
 
-    if plant_ratio < 0.15:
+    # Human skin / warm non-crop check: R is dominant over G, with G > B
+    is_skin = (r > g + 25) & (g > b) & (r > 75)
+    skin_ratio = int(np.sum(is_skin)) / total_pixels
+
+    # Neutral / grey / dark background check (desks, walls, screens)
+    is_neutral = (abs(r - g) < 14) & (abs(g - b) < 14)
+    neutral_ratio = int(np.sum(is_neutral)) / total_pixels
+
+    if plant_ratio < 0.20 or skin_ratio > 0.40 or neutral_ratio > 0.70:
         return "INVALID_NON_PLANT", plant_ratio, 0.0
 
-    # Necrotic / Lesion / Spore Mask on foliar tissue
-    is_lesion = foliar_mask & (
-        ((r > g * 1.05) & (r > b * 1.15)) |  # Reddish-brown necrotic spot/margin
-        ((r < 55) & (g < 60) & (b < 55)) |   # Black fungal rot/sheath rot
-        ((np.abs(r - g) < 18) & (np.abs(g - b) < 18) & (r > 40) & (r < 170)) | # Gray blast center
-        ((r > 130) & (g > 130) & (b < 100))  # Bacterial blight bleached streaks
+    # Stage 2 Pre-Check: Foliar Lesion / Necrosis Area Ratio on plant pixels
+    # Fungal lesions appear as brownish/grey necrotic spots with margins
+    is_lesion = is_plant & (
+        ((r > g * 1.04) & (r > b * 1.12)) | \
+        ((r < 60) & (g < 65) & (b < 60)) | \
+        ((abs(r - g) < 18) & (abs(g - b) < 18) & (r > 35) & (r < 175))
     )
     lesion_pixels = int(np.sum(is_lesion))
     lesion_ratio = lesion_pixels / max(plant_pixels, 1)
 
-    if lesion_ratio < 0.05:
+    if lesion_ratio < 0.045:
         return "HEALTHY", plant_ratio, lesion_ratio
     else:
         return "INFECTED", plant_ratio, lesion_ratio
 
 def detect_disease(image: Image.Image, custom_api_key: str = None, force_offline: bool = False) -> dict:
     """
-    Authentic Hybrid AI Engine:
-    1. Online Global AI: Connects to Google Gemini 3.5 Multimodal Vision API for
-       world-knowledge crop diagnosis, verified CIBRC dosage, and trilingual vernacular accuracy.
-    2. Offline Edge AI: Automatically falls back to local PyTorch MobileNetV3 and mathematical
-       foliar specimen validation when offline.
+    Authentic 2-Stage Hybrid Verification Engine:
+    Stage 1: Crop Gatekeeper (Rejects Non-Plants - Humans, faces, furniture, walls, objects)
+    Stage 2: Healthy vs. Disease Classification + Strict Confidence Threshold (>= 70%)
     """
     # 1. Attempt Online Cloud AI with Google Gemini if online
     if not force_offline:
         gemini_result = predict_with_gemini_vision(image, api_key=custom_api_key)
         if gemini_result is not None:
+            # Enforce 70% confidence threshold on online model as well
+            if gemini_result.get("disease_key") not in ["invalid_specimen", "healthy"]:
+                if gemini_result.get("confidence", 0.0) < 70.0:
+                    gemini_result["disease_key"] = "uncertain"
+                    gemini_result["data"] = KNOWLEDGE_BASE["uncertain"]
             return gemini_result
 
     # 2. Resilient Offline Local Fallback
@@ -822,74 +843,98 @@ def detect_disease(image: Image.Image, custom_api_key: str = None, force_offline
             "data": KNOWLEDGE_BASE["invalid_specimen"]
         }
 
-    # STAGE 2: HEALTHY PADDY CROP
+    # STAGE 2A: HEALTHY PADDY CROP (FIRST-CLASS STATUS)
     if specimen_status == "HEALTHY":
         return {
             "source": "Local Edge Inference (Offline)",
             "disease_key": "healthy",
             "predicted_raw_class": "Healthy_Paddy_Crop_Clean_Foliage",
             "base_severity": "Healthy",
-            "confidence": round(96.0 + min(4.0, (1.0 - lesion_ratio) * 4), 2),
+            "confidence": round(96.0 + min(3.8, (1.0 - lesion_ratio) * 3.8), 2),
             "data": KNOWLEDGE_BASE["healthy"]
         }
 
-    # STAGE 3: INFECTED PADDY CROP (PATHOGEN IDENTIFICATION)
+    # STAGE 2B: INFECTED PADDY CROP (PATHOGEN IDENTIFICATION + THRESHOLD)
     model, classes, transform = load_pytorch_model()
-    detected_key = "rice_blast"
-    base_severity = "Severe"
-    confidence = 92.5
-    predicted_class = "01_Fungal_Rice_Blast_Magnaporthe_oryzae"
+    if not model or not classes or not transform:
+        return {
+            "source": "Local Edge Inference (Offline)",
+            "disease_key": "uncertain",
+            "predicted_raw_class": "Model_Weights_Not_Loaded",
+            "base_severity": "Uncertain",
+            "confidence": 0.0,
+            "data": KNOWLEDGE_BASE["uncertain"]
+        }
 
-    if model and classes and transform:
-        try:
-            import torch
-            img_rgb = image.convert("RGB")
-            tensor = transform(img_rgb).unsqueeze(0)
-            with torch.no_grad():
-                outputs = model(tensor)
-                probs = torch.softmax(outputs, dim=1)
-                conf, pred_idx = torch.max(probs, 1)
-                confidence = round(float(conf.item()) * 100, 2)
-                predicted_class = classes[pred_idx.item()]
+    try:
+        import torch
+        img_rgb = image.convert("RGB")
+        tensor = transform(img_rgb).unsqueeze(0)
+        with torch.no_grad():
+            outputs = model(tensor)
+            probs = torch.softmax(outputs, dim=1)
+            conf, pred_idx = torch.max(probs, 1)
+            confidence = round(float(conf.item()) * 100, 2)
+            predicted_class = classes[pred_idx.item()]
 
-            f_lower = predicted_class.lower()
-            if "blast" in f_lower:
-                detected_key = "rice_blast"
-                base_severity = "Severe"
-            elif "brown_spot" in f_lower:
-                detected_key = "brown_spot"
-                base_severity = "Medium"
-            elif "sheath_blight" in f_lower:
-                detected_key = "sheath_blight"
-                base_severity = "Medium"
-            elif "sheath_rot" in f_lower:
-                detected_key = "sheath_rot"
-                base_severity = "Medium"
-            elif "false_smut" in f_lower:
-                detected_key = "false_smut"
-                base_severity = "Severe"
-            elif "bacterial_leaf_blight" in f_lower or "blb" in f_lower:
-                detected_key = "bacterial_leaf_blight"
-                base_severity = "Medium"
-            elif "tungro" in f_lower:
-                detected_key = "rice_tungro"
-                base_severity = "Severe"
-            elif "root_knot" in f_lower or "meloidogyne" in f_lower:
-                detected_key = "root_knot_nematode"
-                base_severity = "Low"
-            else:
-                detected_key = "brown_spot" if "spot" in f_lower else "rice_blast"
-                base_severity = "Medium"
-        except Exception:
-            pass
+        # STRICT CONFIDENCE THRESHOLD (>= 70%)
+        CONFIDENCE_THRESHOLD = 70.0
+        if confidence < CONFIDENCE_THRESHOLD:
+            return {
+                "source": "Local Edge Inference (Offline)",
+                "disease_key": "uncertain",
+                "predicted_raw_class": f"Low_Confidence_Scan ({predicted_class})",
+                "base_severity": "Uncertain",
+                "confidence": confidence,
+                "data": KNOWLEDGE_BASE["uncertain"]
+            }
 
-    return {
-        "disease_key": detected_key,
-        "predicted_raw_class": predicted_class,
-        "base_severity": base_severity,
-        "confidence": confidence,
-        "data": KNOWLEDGE_BASE.get(detected_key, KNOWLEDGE_BASE["rice_blast"])
-    }
+        f_lower = predicted_class.lower()
+        if "blast" in f_lower:
+            detected_key = "rice_blast"
+            base_severity = "Severe"
+        elif "brown_spot" in f_lower:
+            detected_key = "brown_spot"
+            base_severity = "Medium"
+        elif "sheath_blight" in f_lower:
+            detected_key = "sheath_blight"
+            base_severity = "Medium"
+        elif "sheath_rot" in f_lower:
+            detected_key = "sheath_rot"
+            base_severity = "Medium"
+        elif "false_smut" in f_lower:
+            detected_key = "false_smut"
+            base_severity = "Severe"
+        elif "bacterial_leaf_blight" in f_lower or "blb" in f_lower:
+            detected_key = "bacterial_leaf_blight"
+            base_severity = "Medium"
+        elif "tungro" in f_lower:
+            detected_key = "rice_tungro"
+            base_severity = "Severe"
+        elif "root_knot" in f_lower or "meloidogyne" in f_lower:
+            detected_key = "root_knot_nematode"
+            base_severity = "Low"
+        else:
+            detected_key = "brown_spot" if "spot" in f_lower else "rice_blast"
+            base_severity = "Medium"
+
+        return {
+            "source": "Local Edge Inference (Offline)",
+            "disease_key": detected_key,
+            "predicted_raw_class": predicted_class,
+            "base_severity": base_severity,
+            "confidence": confidence,
+            "data": KNOWLEDGE_BASE.get(detected_key, KNOWLEDGE_BASE["rice_blast"])
+        }
+    except Exception:
+        return {
+            "source": "Local Edge Inference (Offline)",
+            "disease_key": "uncertain",
+            "predicted_raw_class": "Inference_Execution_Error",
+            "base_severity": "Uncertain",
+            "confidence": 0.0,
+            "data": KNOWLEDGE_BASE["uncertain"]
+        }
 
 # -----------------------------------------------------------------------------
 # MAIN APPLICATION FLOW
@@ -1061,6 +1106,9 @@ def main():
             st.markdown("---")
             st.markdown(f"""
             <div class="status-healthy">
+                <div style="display:inline-block; padding: 6px 14px; border-radius: 20px; background: #dcfce7; color: #15803d; font-weight: 700; font-size: 0.88rem; margin-bottom: 10px; border: 1px solid #86efac;">
+                    🎯 Prediction: Healthy Foliage | 📊 Confidence: {result['confidence']}% | 🌐 Engine: {result.get('source', 'Hybrid AI')}
+                </div>
                 <h1 style="font-size: 2.8rem; margin-bottom: 8px;">🌱 HEALTHY CROP</h1>
                 <h2>{T['healthy_msg']}</h2>
                 <p style="font-size: 1.15rem; margin-top: 6px;">Confidence: {result['confidence']}% | Plant foliage is clean, vibrant, and pathogen-free</p>
@@ -1071,6 +1119,35 @@ def main():
                 if h_audio:
                     play_audio_snippet(h_audio)
             return
+
+        # CASE 3: UNCERTAIN SCAN (CONFIDENCE < 70% SAFETY THRESHOLD)
+        if disease_key == "uncertain":
+            st.markdown("---")
+            unc_desc = disease_info.get(cur_lang, disease_info["english"])
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 3px solid #f59e0b; border-radius: 20px; padding: 26px; text-align: center; color: #92400e; margin-bottom: 24px; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);">
+                <div style="display:inline-block; padding: 6px 14px; border-radius: 20px; background: #fde68a; color: #b45309; font-weight: 700; font-size: 0.88rem; margin-bottom: 12px; border: 1px solid #fcd34d;">
+                    🎯 Prediction: {result.get('predicted_raw_class', 'Uncertain')} | 📊 Confidence: {result['confidence']}% (&lt; 70% Threshold)
+                </div>
+                <h1 style="font-size: 2.1rem; margin-bottom: 8px;">🔍 LOW CONFIDENCE SCAN</h1>
+                <h3 style="margin-bottom: 8px; color: #b45309;">{unc_desc}</h3>
+                <p style="font-size: 1.05rem; color: #78350f; margin: 0; font-weight: 600;">The AI engine detected potential foliar variation, but the prediction confidence ({result['confidence']}%) is below our 70% accuracy safety threshold. To protect your crop and avoid wasteful chemical expenditure, no fungicides are prescribed. Please turn on your camera torch or take a clearer photo in daylight 15–20 cm from the leaf.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button(f"🔊 {T['listen_btn']} (Safety Advisory)", key="uncertain_tts"):
+                u_text = "Confidence is below 70 percent threshold. Please turn on your camera torch and retake a clearer photo."
+                u_audio = generate_tts_audio(u_text, lang_code=cur_lang)
+                if u_audio:
+                    play_audio_snippet(u_audio)
+            return
+
+        # Diagnostic & Confidence Debug Badge for Confirmed Disease
+        engine_source = result.get("source", "Google Gemini 3.5 Multimodal Cloud AI")
+        st.markdown(f"""
+        <div style="display:inline-block; padding: 8px 18px; border-radius: 24px; background: #e0f2fe; color: #0369a1; border: 1.5px solid #7dd3fc; font-weight: 700; font-size: 0.95rem; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+            🎯 Prediction: <b>{disease_info.get('english', result.get('predicted_raw_class'))}</b> &nbsp;|&nbsp; 📊 Confidence: <b>{result['confidence']}%</b> &nbsp;|&nbsp; 🌐 Engine: <b>{engine_source}</b>
+        </div>
+        """, unsafe_allow_html=True)
 
         questions = disease_info.get("questions", [])
 

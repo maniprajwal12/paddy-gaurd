@@ -578,29 +578,32 @@
           const imgData = ctx.getImageData(0, 0, 160, 160).data;
           const totalPixels = 160 * 160;
           let plantPixels = 0;
+          let skinPixels = 0;
+          let neutralPixels = 0;
           let lesionPixels = 0;
 
           for (let i = 0; i < imgData.length; i += 4) {
             const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
-            // Foliage chlorophyll & chlorosis
-            const isGreen = (g > r * 0.85) && (g > b * 1.05) && (g > 35);
-            const isYellow = (r > 60) && (g > 55) && (b < g * 0.8) && (b < r * 0.75) && (Math.abs(r - g) < 55);
-            if (isGreen || isYellow) {
+            const isPlant = ((g >= r * 0.90) || (Math.abs(g - r) < 20)) && (g > b * 1.03) && (g > 35) && (r < g + 22);
+            if (isPlant) {
               plantPixels++;
-              const isLesion = ((r > g * 1.05) && (r > b * 1.15)) || 
-                               ((r < 55) && (g < 60) && (b < 55)) ||
-                               ((Math.abs(r - g) < 18) && (Math.abs(g - b) < 18) && (r > 40) && (r < 170)) ||
-                               (r > 130 && g > 130 && b < 100);
+              const isLesion = ((r > g * 1.04) && (r > b * 1.12)) || ((r < 60) && (g < 65) && (b < 60)) || ((Math.abs(r - g) < 18) && (Math.abs(g - b) < 18) && (r > 35) && (r < 175));
               if (isLesion) lesionPixels++;
+            } else if ((r > g + 25) && (g > b) && (r > 75)) {
+              skinPixels++;
+            } else if ((Math.abs(r - g) < 14) && (Math.abs(g - b) < 14)) {
+              neutralPixels++;
             }
           }
 
           const plantRatio = plantPixels / totalPixels;
+          const skinRatio = skinPixels / totalPixels;
+          const neutralRatio = neutralPixels / totalPixels;
           const lesionRatio = plantPixels > 0 ? (lesionPixels / plantPixels) : 0;
           
-          if (plantRatio < 0.15) {
+          if (plantRatio < 0.20 || skinRatio > 0.40 || neutralRatio > 0.70) {
             resolve('INVALID_NON_PLANT');
-          } else if (lesionRatio < 0.05) {
+          } else if (lesionRatio < 0.045) {
             resolve('HEALTHY');
           } else {
             resolve('INFECTED');
