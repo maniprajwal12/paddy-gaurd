@@ -1,0 +1,334 @@
+{
+  "status": "SUCCESS",
+  "verified_accuracy_percent": 100.0,
+  "total_evaluated_samples": 280,
+  "total_correct_predictions": 280,
+  "total_classes": 27,
+  "average_model_confidence": 97.66,
+  "class_statistics": {
+    "01_Fungal_Rice_Blast_Magnaporthe_oryzae": {
+      "images": 14,
+      "correct": 14,
+      "accuracy": 100.0,
+      "avg_confidence": 97.89
+    },
+    "02_Fungal_Brown_Spot_Bipolaris_oryzae": {
+      "images": 11,
+      "correct": 11,
+      "accuracy": 100.0,
+      "avg_confidence": 92.24
+    },
+    "03_Fungal_Sheath_Blight_Rhizoctonia_solani": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 95.97
+    },
+    "04_Fungal_Sheath_Rot_Sarocladium_oryzae": {
+      "images": 11,
+      "correct": 11,
+      "accuracy": 100.0,
+      "avg_confidence": 95.81
+    },
+    "05_Fungal_False_Smut_Ustilaginoidea_virens": {
+      "images": 11,
+      "correct": 11,
+      "accuracy": 100.0,
+      "avg_confidence": 98.16
+    },
+    "06_Fungal_Bakanae_Fusarium_fujikuroi": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 98.83
+    },
+    "07_Fungal_Stem_Rot_Sclerotium_oryzae": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.75
+    },
+    "08_Fungal_Narrow_Brown_Leaf_Spot_Cercospora_janseana": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.4
+    },
+    "09_Fungal_Leaf_Smut_Entyloma_oryzae": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.8
+    },
+    "10_Fungal_Stackburn_Alternaria_padwickii": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.02
+    },
+    "11_Fungal_Crown_Sheath_Rot_Gaeumannomyces_graminis": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.63
+    },
+    "12_Bacterial_Leaf_Blight_Xanthomonas_oryzae": {
+      "images": 12,
+      "correct": 12,
+      "accuracy": 100.0,
+      "avg_confidence": 89.96
+    },
+    "13_Bacterial_Leaf_Streak_Xanthomonas_oryzicola": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 96.32
+    },
+    "14_Bacterial_Panicle_Blight_Burkholderia_glumae": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.75
+    },
+    "15_Bacterial_Foot_Rot_Erwinia_chrysanthemi": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.76
+    },
+    "16_Viral_Rice_Tungro_Virus_RTBV_RTSV": {
+      "images": 11,
+      "correct": 11,
+      "accuracy": 100.0,
+      "avg_confidence": 90.6
+    },
+    "17_Viral_Rice_Grassy_Stunt_Virus_RGSV": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.92
+    },
+    "18_Viral_Rice_Ragged_Stunt_Virus_RRSV": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.85
+    },
+    "19_Viral_Rice_Stripe_Virus_RSV": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 97.15
+    },
+    "20_Viral_Rice_Yellow_Mottle_Virus_RYMV": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 98.21
+    },
+    "21_Viral_Rice_Dwarf_Virus_RDV": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 97.06
+    },
+    "22_Viral_Hoja_Blanca_White_Leaf_Virus": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.68
+    },
+    "23_Phytoplasma_Rice_Yellow_Dwarf": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.86
+    },
+    "24_Nematode_Ufra_Stem_Nematode_Ditylenchus_angustus": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.58
+    },
+    "25_Nematode_White_Tip_Aphelenchoides_besseyi": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 96.86
+    },
+    "26_Nematode_Root_Knot_Meloidogyne_graminicola": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 99.72
+    },
+    "27_Nematode_Rice_Root_Nematode_Hirschmanniella_oryzae": {
+      "images": 10,
+      "correct": 10,
+      "accuracy": 100.0,
+      "avg_confidence": 98.74
+    }
+  },
+  "sample_verifications": [
+    {
+      "filename": "blast-collar.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\blast-collar.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 97.12,
+      "is_correct": true
+    },
+    {
+      "filename": "blast-leaf-1.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\blast-leaf-1.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 98.96,
+      "is_correct": true
+    },
+    {
+      "filename": "blast-leaf-2.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\blast-leaf-2.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 99.78,
+      "is_correct": true
+    },
+    {
+      "filename": "blast-leaf-4.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\blast-leaf-4.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 99.68,
+      "is_correct": true
+    },
+    {
+      "filename": "blast-leaf.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\blast-leaf.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 97.47,
+      "is_correct": true
+    },
+    {
+      "filename": "expert_1-lesions__on_leaves_with_grey_centre_and_brown_margin.JPG",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\expert_1-lesions__on_leaves_with_grey_centre_and_brown_margin.JPG",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 99.92,
+      "is_correct": true
+    },
+    {
+      "filename": "expert_2-sphindle_shaped_lesions_on_leaves.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\expert_2-sphindle_shaped_lesions_on_leaves.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 99.85,
+      "is_correct": true
+    },
+    {
+      "filename": "expert_3-NECK_BLAST.JPG",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\expert_3-NECK_BLAST.JPG",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 99.58,
+      "is_correct": true
+    },
+    {
+      "filename": "expert_4-nodal_Blast.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\expert_4-nodal_Blast.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 95.76,
+      "is_correct": true
+    },
+    {
+      "filename": "tnau_blast_1.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\tnau_blast_1.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 98.79,
+      "is_correct": true
+    },
+    {
+      "filename": "tnau_blast_2.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\tnau_blast_2.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 98.01,
+      "is_correct": true
+    },
+    {
+      "filename": "tnau_blast_3.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\tnau_blast_3.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 99.56,
+      "is_correct": true
+    },
+    {
+      "filename": "tnau_blast_4.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\tnau_blast_4.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 86.0,
+      "is_correct": true
+    },
+    {
+      "filename": "tnau_neck_blast.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\01_Fungal_Rice_Blast_Magnaporthe_oryzae\\tnau_neck_blast.jpg",
+      "true_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "predicted_class": "01_Fungal_Rice_Blast_Magnaporthe_oryzae",
+      "confidence": 99.98,
+      "is_correct": true
+    },
+    {
+      "filename": "brown-spot-1.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\02_Fungal_Brown_Spot_Bipolaris_oryzae\\brown-spot-1.jpg",
+      "true_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "predicted_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "confidence": 99.5,
+      "is_correct": true
+    },
+    {
+      "filename": "brown-spot-3.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\02_Fungal_Brown_Spot_Bipolaris_oryzae\\brown-spot-3.jpg",
+      "true_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "predicted_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "confidence": 80.17,
+      "is_correct": true
+    },
+    {
+      "filename": "brown-spot-4.jpg",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\02_Fungal_Brown_Spot_Bipolaris_oryzae\\brown-spot-4.jpg",
+      "true_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "predicted_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "confidence": 99.62,
+      "is_correct": true
+    },
+    {
+      "filename": "expert_1-Circular_or_oval_Spots_on_leaves.JPG",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\02_Fungal_Brown_Spot_Bipolaris_oryzae\\expert_1-Circular_or_oval_Spots_on_leaves.JPG",
+      "true_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "predicted_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "confidence": 87.38,
+      "is_correct": true
+    },
+    {
+      "filename": "expert_2-Spots_on_leaves_with__brown_margin.JPG",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\02_Fungal_Brown_Spot_Bipolaris_oryzae\\expert_2-Spots_on_leaves_with__brown_margin.JPG",
+      "true_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "predicted_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "confidence": 96.16,
+      "is_correct": true
+    },
+    {
+      "filename": "expert_3-Dark_brown_or_black_spots_on_panicle__glumes_and_grains.JPG",
+      "path": "C:\\Users\\likit\\OneDrive\\Documents\\Desktop\\paddy_disease_dataset\\02_Fungal_Brown_Spot_Bipolaris_oryzae\\expert_3-Dark_brown_or_black_spots_on_panicle__glumes_and_grains.JPG",
+      "true_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "predicted_class": "02_Fungal_Brown_Spot_Bipolaris_oryzae",
+      "confidence": 98.51,
+      "is_correct": true
+    }
+  ]
+}
