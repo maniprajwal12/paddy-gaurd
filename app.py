@@ -303,9 +303,11 @@ UI_STRINGS = {
         "subtitle": "Kisan Smart Crop Disease Detection & Triage Advisory",
         "lang_name": "English",
         "scanner_title": "📷 Step 1: Scan Crop Leaf",
-        "scanner_help": "Capture an infected leaf directly using your mobile/laptop camera or upload a clear photo.",
-        "take_photo": "Capture Leaf Photo",
-        "upload_fallback": "Or upload leaf image from device",
+        "scanner_help": "Choose whether to take a live photo using your camera or upload an existing photo from your gallery / files.",
+        "tab_camera": "Live Camera",
+        "tab_upload": "Upload from Gallery / Files",
+        "take_photo": "📸 Capture Leaf with Camera",
+        "upload_fallback": "📁 Choose Leaf Photo from Device",
         "triage_title": "🩺 Step 2: Diagnostic Voice Verification (Triage)",
         "triage_desc": "Answer these quick questions to verify field symptoms. Tap 'Listen' to hear in your language.",
         "listen_btn": "🔊 Listen Question",
@@ -333,9 +335,11 @@ UI_STRINGS = {
         "subtitle": "రైతు స్మార్ట్ పంట తెగుళ్ల గుర్తింపు & వాయిస్ సలహా వ్యవస్థ",
         "lang_name": "తెలుగు (Telugu)",
         "scanner_title": "📷 దశ 1: పంట ఆకును స్కాన్ చేయండి",
-        "scanner_help": "కెమెరాతో తెగులు సోకిన ఆకును స్పష్టంగా ఫోటో తీయండి లేదా గ్యాలరీ నుండి అప్‌లోడ్ చేయండి.",
-        "take_photo": "ఆకు ఫోటో తీయండి",
-        "upload_fallback": "లేదా మొబైల్ నుండి ఫోటో అప్‌లోడ్ చేయండి",
+        "scanner_help": "కెమెరాతో లైవ్ ఫోటో తీయడానికి 'కెమెరా' ఎంచుకోండి లేదా ఫోన్ నుండి అప్‌లోడ్ చేయడానికి 'గ్యాలరీ' ఎంచుకోండి.",
+        "tab_camera": "లైవ్ కెమెరా (Live Camera)",
+        "tab_upload": "గ్యాలరీ / ఫైల్స్ (Upload from Gallery)",
+        "take_photo": "📸 కెమెరాతో ఆకును ఫోటో తీయండి",
+        "upload_fallback": "📁 ఫోన్ గ్యాలరీ లేదా ఫైల్స్ నుండి ఎంచుకోండి",
         "triage_title": "🩺 దశ 2: వ్యాధి నిర్ధారణ ప్రశ్నలు (వాయిస్ వెరిఫికేషన్)",
         "triage_desc": "లక్షణాలను ఖచ్చితంగా తెలుసుకోవడానికి ఈ ప్రశ్నలకు సమాధానం ఇవ్వండి. వాయిస్ వినడానికి బటన్ నొక్కండి.",
         "listen_btn": "🔊 తెలుగులో వినండి",
@@ -363,9 +367,11 @@ UI_STRINGS = {
         "subtitle": "ರೈತ ಮಿತ್ರ - ಸ್ಮಾರ್ಟ್ ಬೆಳೆ ರೋಗ ಪತ್ತೆ ಮತ್ತು ಧ್ವನಿ ಮಾರ್ಗದರ್ಶಿ",
         "lang_name": "ಕನ್ನಡ (Kannada)",
         "scanner_title": "📷 ಹಂತ 1: ಬೆಳೆಯ ಎಲೆಯನ್ನು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
-        "scanner_help": "ಕ್ಯಾಮೆರಾ ಬಳಸಿ ರೋಗ ಪೀಡಿತ ಎಲೆಯ ಫೋಟೋ ತೆಗೆಯಿರಿ ಅಥವಾ ಮೊಬೈಲ್‌ನಿಂದ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.",
-        "take_photo": "ಎಲೆಯ ಫೋಟೋ ತೆಗೆಯಿರಿ",
-        "upload_fallback": "ಅಥವಾ ಗ್ಯಾಲರಿಯಿಂದ ಫೋಟೋ ಆಯ್ಕೆಮಾಡಿ",
+        "scanner_help": "ಲೈವ್ ಫೋಟೋ ತೆಗೆಯಲು 'ಕ್ಯಾಮೆರಾ' ಅಥವಾ ಮೊಬೈಲ್‌ನಿಂದ ಅಪ್‌ಲೋಡ್ ಮಾಡಲು 'ಗ್ಯಾಲರಿ' ಆಯ್ಕೆಮಾಡಿ.",
+        "tab_camera": "ಲೈವ್ ಕ್ಯಾಮೆರಾ (Live Camera)",
+        "tab_upload": "ಗ್ಯಾಲರಿ / ಫೈಲ್ಸ್ (Upload from Gallery)",
+        "take_photo": "📸 ಕ್ಯಾಮೆರಾ ಬಳಸಿ ಎಲೆಯ ಫೋಟೋ ತೆಗೆಯಿರಿ",
+        "upload_fallback": "📁 ಮೊಬೈಲ್ ಗ್ಯಾಲರಿ ಅಥವಾ ಫೈಲ್ಸ್‌ಗಳಿಂದ ಆರಿಸಿ",
         "triage_title": "🩺 ಹಂತ 2: ರೋಗ ದೃಢೀಕರಣ ಪ್ರಶ್ನೆಗಳು (ಧ್ವನಿ ಪರಿಶೀಲನೆ)",
         "triage_desc": "ರೋಗದ ಲಕ್ಷಣಗಳನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಲು ಉತ್ತರಿಸಿ. ಧ್ವನಿ ಕೇಳಲು 'ಕೇಳಿ' ಬಟನ್ ಒತ್ತಿರಿ.",
         "listen_btn": "🔊 ಕನ್ನಡದಲ್ಲಿ ಕೇಳಿ",
@@ -597,21 +603,23 @@ def main():
         st.session_state["severity_override"] = None
 
     # -------------------------------------------------------------------------
-    # STEP 1: CAMERA SCANNER & IMAGE UPLOAD
+    # STEP 1: CAMERA SCANNER & IMAGE UPLOAD (SEPARATE TABS FOR PHONE & DESKTOP)
     # -------------------------------------------------------------------------
     st.markdown(f"### {T['scanner_title']}")
     st.caption(T['scanner_help'])
 
-    cam_col, upload_col = st.columns(2)
+    tab_cam, tab_up = st.tabs([f"📸 {T['tab_camera']}", f"📁 {T['tab_upload']}"])
     
     image_file = None
-    with cam_col:
-        camera_img = st.camera_input(T['take_photo'])
+    with tab_cam:
+        st.markdown(f"##### {T['take_photo']}")
+        camera_img = st.camera_input(label=T['take_photo'], label_visibility="collapsed")
         if camera_img:
             image_file = camera_img
 
-    with upload_col:
-        uploaded_img = st.file_uploader(T['upload_fallback'], type=["jpg", "jpeg", "png"])
+    with tab_up:
+        st.markdown(f"##### {T['upload_fallback']}")
+        uploaded_img = st.file_uploader(label=T['upload_fallback'], type=["jpg", "jpeg", "png"], label_visibility="collapsed")
         if uploaded_img and not image_file:
             image_file = uploaded_img
 

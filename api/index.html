@@ -125,22 +125,82 @@
     }
     .section-desc { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 16px; }
 
-    /* Camera Upload Box */
-    .upload-zone {
-      border: 2.5px dashed #94a3b8;
-      border-radius: 14px;
-      padding: 30px 20px;
+    /* Camera & Upload Options Grid (Responsive Phone & Desktop) */
+    .scan-options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 10px;
+    }
+    .scan-card {
+      border-radius: 16px;
+      padding: 24px 16px;
       text-align: center;
-      background: #f8fafc;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.25s ease-in-out;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2.5px solid transparent;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
-    .upload-zone:hover {
-      border-color: var(--primary);
-      background: var(--primary-light);
+    .scan-card input { display: none; }
+    .camera-card {
+      background: linear-gradient(145deg, #ecfdf5 0%, #d1fae5 100%);
+      border-color: #10b981;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);
     }
-    .upload-zone input { display: none; }
-    .upload-icon { font-size: 2.5rem; margin-bottom: 8px; }
+    .camera-card:hover, .camera-card:active {
+      background: #a7f3d0;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.25);
+    }
+    .upload-card {
+      background: linear-gradient(145deg, #eff6ff 0%, #dbeafe 100%);
+      border-color: #3b82f6;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.15);
+    }
+    .upload-card:hover, .upload-card:active {
+      background: #bfdbfe;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(59, 130, 246, 0.25);
+    }
+    .scan-card-icon {
+      font-size: 2.6rem;
+      margin-bottom: 8px;
+    }
+    .scan-card-title {
+      font-weight: 800;
+      font-size: 1.15rem;
+      margin-bottom: 4px;
+    }
+    .camera-card .scan-card-title { color: #065f46; }
+    .upload-card .scan-card-title { color: #1e40af; }
+    .scan-card-subtitle {
+      font-size: 0.85rem;
+      color: #475569;
+      font-weight: 600;
+    }
+
+    @media (max-width: 640px) {
+      .scan-options-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+      .scan-card {
+        padding: 20px 14px;
+        min-height: 95px;
+      }
+      .scan-card-icon {
+        font-size: 2.2rem;
+        margin-bottom: 4px;
+      }
+      .scan-card-title {
+        font-size: 1.05rem;
+      }
+    }
 
     /* Preview Image */
     .preview-box {
@@ -298,12 +358,23 @@
       <div class="section-title" id="scanTitle">📷 దశ 1: పంట ఆకును స్కాన్ చేయండి</div>
       <div class="section-desc" id="scanDesc">కెమెరాతో తెగులు సోకిన ఆకును ఫోటో తీయండి లేదా ఫోన్ నుండి అప్‌లోడ్ చేయండి.</div>
 
-      <label class="upload-zone" for="cameraInput">
-        <div class="upload-icon">📸</div>
-        <div style="font-weight:700; font-size:1.1rem; color:var(--primary);" id="uploadPrompt">ఫోటో తీయండి / అప్‌లోడ్ చేయండి</div>
-        <div style="font-size:0.85rem; color:#64748b;">(JPG, PNG formats supported)</div>
-        <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleImage(event)">
-      </label>
+      <div class="scan-options-grid">
+        <!-- Separate Camera Button (direct live camera on phone & desktop) -->
+        <label class="scan-card camera-card" for="cameraInput">
+          <div class="scan-card-icon">📸</div>
+          <div class="scan-card-title" id="cameraTitle">కెమెరాతో ఫోటో తీయండి</div>
+          <div class="scan-card-subtitle" id="cameraSubtitle">నేరుగా లైవ్ కెమెరా తెరవండి (Phone Camera)</div>
+          <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handleImage(event)">
+        </label>
+
+        <!-- Separate Upload Button (gallery & file picker on phone & desktop) -->
+        <label class="scan-card upload-card" for="galleryInput">
+          <div class="scan-card-icon">📁</div>
+          <div class="scan-card-title" id="uploadTitle">గ్యాలరీ నుండి అప్‌లోడ్ చేయండి</div>
+          <div class="scan-card-subtitle" id="uploadSubtitle">ఫోన్ గ్యాలరీ లేదా ఫైల్స్ నుండి ఎంచుకోండి (Gallery/Files)</div>
+          <input type="file" id="galleryInput" accept="image/*" onchange="handleImage(event)">
+        </label>
+      </div>
 
       <div class="preview-box" id="previewBox">
         <img id="previewImg" class="preview-img" alt="Leaf Specimen">
@@ -351,7 +422,10 @@
         subtitle: "రైతు స్మార్ట్ పంట తెగుళ్ల గుర్తింపు & వాయిస్ సలహా వ్యవస్థ",
         scanTitle: "📷 దశ 1: పంట ఆకును స్కాన్ చేయండి",
         scanDesc: "కెమెరాతో తెగులు సోకిన ఆకును ఫోటో తీయండి లేదా ఫోన్ నుండి అప్‌లోడ్ చేయండి.",
-        uploadPrompt: "ఫోటో తీయండి / అప్‌లోడ్ చేయండి",
+        cameraTitle: "📸 కెమెరాతో ఫోటో తీయండి",
+        cameraSubtitle: "నేరుగా లైవ్ కెమెరా తెరవండి (Phone Camera)",
+        uploadTitle: "📁 గ్యాలరీ నుండి అప్‌లోడ్ చేయండి",
+        uploadSubtitle: "ఫోన్ గ్యాలరీ లేదా ఫైల్స్ నుండి ఎంచుకోండి (Gallery/Files)",
         triageTitle: "🩺 దశ 2: వ్యాధి నిర్ధారణ ప్రశ్నలు",
         triageDesc: "లక్షణాలను సరిగ్గా తెలుసుకోవడానికి సమాధానం ఇవ్వండి. ప్రశ్న వినడానికి బటన్ నొక్కండి.",
         verifyBtn: "ధృవీకరించండి (Confirm Diagnosis)",
@@ -373,7 +447,10 @@
         subtitle: "ರೈತ ಮಿತ್ರ - ಸ್ಮಾರ್ಟ್ ಬೆಳೆ ರೋಗ ಪತ್ತೆ ಮತ್ತು ಧ್ವನಿ ಮಾರ್ಗದರ್ಶಿ",
         scanTitle: "📷 ಹಂತ 1: ಬೆಳೆಯ ಎಲೆಯನ್ನು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
         scanDesc: "ಕ್ಯಾಮೆರಾ ಬಳಸಿ ರೋಗ ಪೀಡಿತ ಎಲೆಯ ಫೋಟೋ ತೆಗೆಯಿರಿ ಅಥವಾ ಮೊಬೈಲ್‌ನಿಂದ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ.",
-        uploadPrompt: "ಫೋಟೋ ತೆಗೆಯಿರಿ / ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
+        cameraTitle: "📸 ಕ್ಯಾಮೆರಾದಿಂದ ಫೋಟೋ ತೆಗೆಯಿರಿ",
+        cameraSubtitle: "ನೇರವಾಗಿ ಲೈವ್ ಕ್ಯಾಮೆರಾ ತೆರೆಯಿರಿ (Phone Camera)",
+        uploadTitle: "📁 ಗ್ಯಾಲರಿಯಿಂದ ಅಪ್‌ಲೋಡ್ ಮಾಡಿ",
+        uploadSubtitle: "ಮೊಬೈಲ್ ಗ್ಯಾಲರಿ ಅಥವಾ ಫೈಲ್ಸ್‌ಗಳಿಂದ ಆರಿಸಿ (Gallery/Files)",
         triageTitle: "🩺 ಹಂತ 2: ರೋಗ ದೃಢೀಕರಣ ಪ್ರಶ್ನೆಗಳು",
         triageDesc: "ರೋಗದ ಲಕ್ಷಣಗಳನ್ನು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಲು ಉತ್ತರಿಸಿ. ಧ್ವನಿ ಕೇಳಲು 'ಕೇಳಿ' ಬಟನ್ ಒತ್ತಿರಿ.",
         verifyBtn: "ದೃಢೀಕರಿಸಿ (Confirm Diagnosis)",
@@ -395,7 +472,10 @@
         subtitle: "Kisan Smart Crop Disease Detection & Voice Advisory System",
         scanTitle: "📷 Step 1: Scan Crop Leaf",
         scanDesc: "Capture infected leaf with camera or upload a clear photo from device.",
-        uploadPrompt: "Capture Photo / Upload",
+        cameraTitle: "📸 Take Photo with Camera",
+        cameraSubtitle: "Direct live camera capture (Phone Camera)",
+        uploadTitle: "📁 Upload from Gallery / Files",
+        uploadSubtitle: "Choose from device gallery or storage (Gallery/Files)",
         triageTitle: "🩺 Step 2: Diagnostic Voice Verification (Triage)",
         triageDesc: "Answer these quick yes/no questions to verify visual signs. Tap 'Listen' for voice.",
         verifyBtn: "Confirm Diagnosis",
@@ -428,7 +508,10 @@
       document.getElementById("appSubtitle").innerText = t.subtitle;
       document.getElementById("scanTitle").innerText = t.scanTitle;
       document.getElementById("scanDesc").innerText = t.scanDesc;
-      document.getElementById("uploadPrompt").innerText = t.uploadPrompt;
+      if (document.getElementById("cameraTitle")) document.getElementById("cameraTitle").innerText = t.cameraTitle;
+      if (document.getElementById("cameraSubtitle")) document.getElementById("cameraSubtitle").innerText = t.cameraSubtitle;
+      if (document.getElementById("uploadTitle")) document.getElementById("uploadTitle").innerText = t.uploadTitle;
+      if (document.getElementById("uploadSubtitle")) document.getElementById("uploadSubtitle").innerText = t.uploadSubtitle;
       document.getElementById("triageTitle").innerText = t.triageTitle;
       document.getElementById("triageDesc").innerText = t.triageDesc;
       document.getElementById("verifyBtn").innerText = t.verifyBtn;
@@ -610,7 +693,10 @@
 
     function resetScan() {
       currentDiagnosis = null;
-      document.getElementById("cameraInput").value = "";
+      const camIn = document.getElementById("cameraInput");
+      if (camIn) camIn.value = "";
+      const galIn = document.getElementById("galleryInput");
+      if (galIn) galIn.value = "";
       document.getElementById("previewBox").style.display = "none";
       document.getElementById("triageSection").style.display = "none";
       document.getElementById("statusCard").style.display = "none";
