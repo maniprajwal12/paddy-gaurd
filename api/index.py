@@ -10,6 +10,165 @@ import io
 import os
 import time
 from PIL import Image
+import urllib.request
+import base64
+import json
+
+def load_gemini_key() -> str:
+    if os.environ.get("GEMINI_API_KEY"):
+        return os.environ.get("GEMINI_API_KEY").strip()
+    candidates = [
+        os.path.join(os.path.dirname(__file__), "gemini_key.txt"),
+        os.path.join(os.path.dirname(__file__), "..", "gemini_key.txt"),
+        r"C:\Users\likit\OneDrive\Documents\Desktop\gemini_key.txt",
+        r"C:\Users\likit\OneDrive\Documents\Desktop\paddyguard_vercel\gemini_key.txt",
+        os.path.join(os.path.dirname(__file__), ".env")
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    for line in f.read().splitlines():
+                        line = line.strip()
+                        if "GEMINI_API_KEY=" in line:
+                            return line.split("=", 1)[1].strip().strip('"').strip("'")
+                        elif line.startswith("AQ."):
+                            return line
+            except Exception:
+                pass
+    return ""
+
+GEMINI_API_KEY = load_gemini_key()
+
+def predict_with_gemini_vision(image: Image.Image, api_key: str = None) -> dict:
+    key = api_key or GEMINI_API_KEY
+    if not key:
+        return None
+    try:
+        img_copy = image.copy()
+        img_copy.thumbnail((640, 640))
+        buf = io.BytesIO()
+        img_copy.save(buf, format="JPEG", quality=85)
+        img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
+        prompt = (
+            "You are an expert Indian ICAR/CIBRC agricultural plant pathologist for rice/paddy (Oryza sativa). "
+            "Analyze this specimen image carefully. "
+            "Respond in valid JSON format with these exact keys: "
+            "is_paddy_crop (boolean: true if rice/paddy crop or plant leaf, false if human, face, desk, room, or non-plant object), "
+            "health_status (string: 'healthy' | 'infected' | 'invalid_specimen'), "
+            "disease_key (string: 'healthy' | 'invalid_specimen' | 'rice_blast' | 'brown_spot' | 'sheath_blight' | 'bacterial_leaf_blight' | 'rice_tungro' | 'sheath_rot' | 'false_smut' | 'stem_rot' | 'root_knot_nematode'), "
+            "disease_name_en (string: English name with pathogen), "
+            "disease_name_te (string: Telugu vernacular disease name in Telugu script), "
+            "disease_name_kn (string: Kannada vernacular disease name in Kannada script), "
+            "confidence (number: float between 80.0 and 99.5), "
+            "severity (string: 'Low' | 'Medium' | 'Severe' | 'Healthy' | 'Invalid'), "
+            "chemical_cibrc (string: official Indian CIBRC approved technical chemical active ingredients), "
+            "dosage (string: precise recommended dosage per acre or dilution in water), "
+            "brands (array of strings: commercial Indian market brand names with manufacturers), "
+            "agronomic_advice (string: practical cultural & field agronomy management advice), "
+            "questions (array of 2 diagnostic verification questions, each with 'en', 'te', 'kn' keys)."
+        )
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key={key}"
+        payload = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}
+                ]
+            }],
+            "generationConfig": {
+                "response_mime_type": "application/json",
+                "temperature": 0.1
+            }
+        }
+
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+
+        with urllib.request.urlopen(req, timeout=9) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            raw_text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if raw_text.startswith("```json"):
+                raw_text = raw_text[7:]
+            elif raw_text.startswith("```"):
+                raw_text = raw_text[3:]
+            if raw_text.endswith("```"):
+                raw_text = raw_text[:-3]
+            gemini_res = json.loads(raw_text.strip())
+
+            is_paddy = gemini_res.get("is_paddy_crop", True)
+            health_status = gemini_res.get("health_status", "infected")
+            disease_key = gemini_res.get("disease_key", "rice_blast")
+
+            if not is_paddy or health_status == "invalid_specimen" or disease_key == "invalid_specimen":
+                return {
+                    "status": "INVALID_SPECIMEN",
+                    "source": "Google Gemini 3.5 Multimodal Cloud AI",
+                    "disease_key": "invalid_specimen",
+                    "confidence": float(gemini_res.get("confidence", 99.2)),
+                    "disease": {
+                        "id": "invalid_specimen",
+                        "group": "Invalid",
+                        "english": gemini_res.get("disease_name_en", "Not a Paddy Crop / Leaf"),
+                        "telugu": gemini_res.get("disease_name_te", "వరి పైరు లేదా ఆకు కాదు (మనిషి / ఇతర వస్తువులు)"),
+                        "kannada": gemini_res.get("disease_name_kn", "ಭತ್ತದ ಬೆಳೆ ಅಥವಾ ಎಲೆ ಅಲ್ಲ (ವ್ಯಕ್ತಿ / ಇತರ ವಸ್ತುಗಳು)"),
+                        "severity": "Invalid",
+                        "chemical_cibrc": "No chemicals needed.",
+                        "dosage": "None",
+                        "brands": [],
+                        "agronomic_advice": gemini_res.get("agronomic_advice", "Please scan a clear, real paddy leaf."),
+                        "questions": []
+                    }
+                }
+
+            if health_status == "healthy" or disease_key == "healthy":
+                return {
+                    "status": "HEALTHY",
+                    "source": "Google Gemini 3.5 Multimodal Cloud AI",
+                    "disease_key": "healthy",
+                    "confidence": float(gemini_res.get("confidence", 98.4)),
+                    "disease": {
+                        "id": "healthy",
+                        "group": "Healthy",
+                        "english": gemini_res.get("disease_name_en", "Healthy Paddy Crop (No Pathogen Detected)"),
+                        "telugu": gemini_res.get("disease_name_te", "ఆరోగ్యకరమైన పంట (Aarogyakaramaina Panta)"),
+                        "kannada": gemini_res.get("disease_name_kn", "ಆರೋಗ್ಯಕರ ಬೆಳೆ (Aarogyakara Bele)"),
+                        "severity": "Healthy",
+                        "chemical_cibrc": "No chemical application required. Crop is healthy.",
+                        "dosage": "Maintain regular water & NPK regimen.",
+                        "brands": ["None needed - Organic Bio-stimulants optional"],
+                        "agronomic_advice": gemini_res.get("agronomic_advice", "Maintain regular field scouting."),
+                        "questions": []
+                    }
+                }
+
+            # Infected Case
+            return {
+                "status": "SUCCESS",
+                "source": "Google Gemini 3.5 Multimodal Cloud AI",
+                "disease_key": disease_key,
+                "confidence": float(gemini_res.get("confidence", 94.5)),
+                "disease": {
+                    "id": disease_key,
+                    "group": "Fungal" if disease_key in ["rice_blast", "brown_spot", "sheath_blight", "sheath_rot", "false_smut"] else "Bacterial",
+                    "english": gemini_res.get("disease_name_en", "Rice Foliar Disease"),
+                    "telugu": gemini_res.get("disease_name_te", "వరి పంట తెగులు"),
+                    "kannada": gemini_res.get("disease_name_kn", "ಭತ್ತದ ಬೆಳೆ ರೋಗ"),
+                    "severity": gemini_res.get("severity", "Medium"),
+                    "chemical_cibrc": gemini_res.get("chemical_cibrc", "CIBRC Recommended Technical Formulation"),
+                    "dosage": gemini_res.get("dosage", "Recommended dosage per acre in 200 L water"),
+                    "brands": gemini_res.get("brands", ["ICAR Approved Commercial Brand"]),
+                    "agronomic_advice": gemini_res.get("agronomic_advice", ""),
+                    "questions": gemini_res.get("questions", [])
+                }
+            }
+    except Exception as e:
+        return None
 
 app = FastAPI(
     title="PaddyGuard AI Serverless API",
@@ -285,12 +444,18 @@ def list_diseases():
 
 @app.post("/api/diagnose")
 @app.post("/diagnose")
-async def diagnose_leaf(file: UploadFile = File(...)):
+async def diagnose_leaf(file: UploadFile = File(...), api_key: str = Query(None)):
     start_time = time.time()
     contents = await file.read()
     image = Image.open(io.BytesIO(contents)).convert("RGB")
     
-    # Fast Pure-PIL Foliar Vegetation & Lesion Analysis (3ms latency, zero cold-start)
+    # 1. Attempt Cloud Multimodal Intelligence with Google Gemini 3.5
+    gemini_res = predict_with_gemini_vision(image, api_key=api_key or GEMINI_API_KEY)
+    if gemini_res is not None:
+        gemini_res["inference_latency_ms"] = round((time.time() - start_time) * 1000, 2)
+        return gemini_res
+
+    # 2. Resilient Pure-PIL Foliar Vegetation & Lesion Analysis (Fallback)
     thumb = image.resize((160, 160))
     pixels = list(thumb.getdata())
     total_pixels = len(pixels)
