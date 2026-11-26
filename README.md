@@ -3,6 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-MobileNetV3-orange.svg)](https://pytorch.org)
 [![Accuracy](https://img.shields.io/badge/Verification%20Accuracy-100.0%25-brightgreen.svg)](#model-performance)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/maniprajwal12/paddy-gaurd&env=GEMINI_API_KEY&envDescription=Google%20Gemini%20Vision%20API%20Key&project-name=paddyguard-ai)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 **PaddyGuard AI** is an offline-capable, high-precision crop disease detection and triage advisory system designed for Indian farmers. The platform provides real-time neural disease classification, diagnostic voice verification, trilingual speech synthesis in **English, Telugu (తెలుగు), and Kannada (ಕನ್ನಡ)**, and CIBRC-compliant chemical dosage recommendations.
@@ -89,10 +90,13 @@ python test_pipeline_stages.py
 ```
 *Outputs instant pass/fail validation across non-plant objects, clean healthy leaves, and real blast specimens.*
 
-### Option 3: Vercel Cloud Serverless Deployment
-* Deploy directly to Vercel by importing this repository.
-* Routes `/api/*` are handled by FastAPI in `api/index.py`.
-* `index.html` is served as the static frontend.
+### Option 3: Vercel Cloud Serverless Deployment (One-Click)
+1. Open [vercel.com](https://vercel.com) and sign in with GitHub.
+2. Click **Add New...** → **Project** and select repository **`maniprajwal12/paddy-gaurd`**.
+3. Under **Environment Variables**, add:
+   * Key: `GEMINI_API_KEY`
+   * Value: `<your-gemini-api-key>`
+4. Click **Deploy**. In under 30 seconds, Vercel gives you a live global HTTPS URL (`https://paddy-gaurd.vercel.app`) that works on any smartphone or browser anywhere in the world!
 
 ---
 
