@@ -58,16 +58,38 @@ The deep learning model is built on **MobileNetV3** with two-phase transfer lear
 
 ---
 
-## 💻 How to Run Locally
+## 🔬 Authentic 2-Stage Verification Pipeline
 
-### Option 1: Streamlit Frontend (with 100% PyTorch AI Model)
+To eliminate false positives (such as scanning human faces, rooms, or healthy leaves and defaulting to Rice Blast), PaddyGuard AI enforces a strict two-stage verification architecture:
+
+1. **Stage 1 — Crop Gatekeeper (Non-Plant Rejection)**:
+   - Evaluates foliar vegetation and chlorophyll absorption index ($G \ge R \times 0.90$).
+   - Rejects human skin, warm rooms, and neutral objects immediately as `INVALID_IMAGE` with trilingual voice warnings.
+   - Prescribes ZERO chemicals and halts further processing.
+
+2. **Stage 2 — Healthy vs. Disease Classification + 70% Confidence Threshold**:
+   - **Healthy Check**: Clean foliage with lesion ratio $< 4.5\%$ is classified as `HEALTHY` (98%+ confidence) with zero chemical treatments.
+   - **Pathogen Identification**: Diseased leaves are diagnosed via **Google Gemini 3.5 Multimodal Vision AI** (online) or **PyTorch MobileNetV3** (offline).
+   - **Strict 70% Confidence Threshold**: If confidence is below 70%, the system refuses to guess and outputs `UNCERTAIN_SCAN` (advising the farmer to turn the torch on).
+   - **Farmer Triage Questions**: 2 regional voice triage questions dynamically adjust severity (`Severe`, `Medium`, `Low`).
+
+---
+
+## 💻 How to Run & Test
+
+### Option 1: Streamlit Platform (Recommended)
 ```bash
-pip install -r requirements.txt streamlit gtts
+# Double-click Run_Streamlit_App.bat on Windows, or run:
 streamlit run app.py
 ```
-*(Or double-click `Run_Streamlit_App.bat` on Windows)*
 
-### Option 2: Vercel Cloud Serverless App
+### Option 2: Run Automated 3-Stage Verification Tests
+```bash
+python test_pipeline_stages.py
+```
+*Outputs instant pass/fail validation across non-plant objects, clean healthy leaves, and real blast specimens.*
+
+### Option 3: Vercel Cloud Serverless Deployment
 * Deploy directly to Vercel by importing this repository.
 * Routes `/api/*` are handled by FastAPI in `api/index.py`.
 * `index.html` is served as the static frontend.
