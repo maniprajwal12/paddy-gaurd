@@ -541,11 +541,13 @@ def load_pytorch_model():
         from torchvision import transforms, models
         import json
 
+        base_dir = os.path.dirname(os.path.abspath(__file__))
         candidates = [
+            os.path.join(base_dir, "paddyguard_model.pth"),
+            "paddyguard_model.pth",
             r"C:\Users\likit\OneDrive\Documents\Desktop\paddy_disease_dataset\paddyguard_model.pth",
             r"C:\Users\likit\.gemini\antigravity\scratch\paddyguard-ai\backend\paddyguard_model.pth",
-            r"C:\Users\likit\Downloads\paddy_disease_dataset\paddyguard_model.pth",
-            "paddyguard_model.pth"
+            r"C:\Users\likit\Downloads\paddy_disease_dataset\paddyguard_model.pth"
         ]
         weights_file = None
         for c in candidates:
@@ -554,9 +556,10 @@ def load_pytorch_model():
                 break
 
         mapping_candidates = [
+            os.path.join(base_dir, "class_mapping.json"),
+            "class_mapping.json",
             r"C:\Users\likit\OneDrive\Documents\Desktop\paddy_disease_dataset\class_mapping.json",
-            r"C:\Users\likit\.gemini\antigravity\scratch\paddyguard-ai\backend\class_mapping.json",
-            "class_mapping.json"
+            r"C:\Users\likit\.gemini\antigravity\scratch\paddyguard-ai\backend\class_mapping.json"
         ]
         classes = None
         for mc in mapping_candidates:
@@ -593,6 +596,16 @@ def load_pytorch_model():
 # GOOGLE GEMINI 3.5 MULTIMODAL CLOUD VISION (ONLINE WORLD INTELLIGENCE)
 # -----------------------------------------------------------------------------
 def load_gemini_key() -> str:
+    # 1. Streamlit Cloud Secrets (Primary for Streamlit Community Cloud)
+    try:
+        if hasattr(st, "secrets") and "GEMINI_API_KEY" in st.secrets:
+            val = str(st.secrets["GEMINI_API_KEY"]).strip()
+            if val:
+                return val
+    except Exception:
+        pass
+
+    # 2. Standard Environment Variable
     if os.environ.get("GEMINI_API_KEY"):
         return os.environ.get("GEMINI_API_KEY").strip()
     candidates = [
