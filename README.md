@@ -3,6 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-MobileNetV3-orange.svg)](https://pytorch.org)
 [![Accuracy](https://img.shields.io/badge/Verification%20Accuracy-100.0%25-brightgreen.svg)](#model-performance)
+[![Deploy with Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/deploy?repository=maniprajwal12/paddy-gaurd&branch=main&mainModule=app.py)
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/maniprajwal12/paddy-gaurd&env=GEMINI_API_KEY&envDescription=Google%20Gemini%20Vision%20API%20Key&project-name=paddyguard-ai)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 

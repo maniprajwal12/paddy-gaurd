@@ -1,25 +1,39 @@
 {
   "version": 2,
-  "rewrites": [
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
+      "src": "api/index.py",
+      "use": "@vercel/python"
     },
     {
-      "source": "/health",
-      "destination": "/api/index.py"
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "api/index.py"
     },
     {
-      "source": "/diagnose",
-      "destination": "/api/index.py"
+      "src": "/health",
+      "dest": "api/index.py"
     },
     {
-      "source": "/diseases",
-      "destination": "/api/index.py"
+      "src": "/diagnose",
+      "dest": "api/index.py"
     },
     {
-      "source": "/commercial-brands",
-      "destination": "/api/index.py"
+      "src": "/diseases",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/commercial-brands",
+      "dest": "api/index.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "index.html"
     }
   ]
 }
